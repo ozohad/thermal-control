@@ -11,6 +11,51 @@ Supported systems:
 - MSN201* Boxer                                           
 - QMB7*|SN37*|SN34* Jupiter, Jaguar, Anaconda
 
+Description:
+The thermal algorithm considers the next rules for FAN speed setting:
+This is because the absence of power supply has bad impact on air flow.
+The minimal PWM setting is dynamic and depends on FAN direction and cable
+type. For system with copper cables only or/and with trusted optic cable
+minimum PWM setting could be decreased according to the system definition.
+Thermal active monitoring is performed based on the values of the next three
+sensors: CPU temperature, ASIC temperature and port cumulative temperature.
+The decision for PWM setting is taken based on the worst measure of them.
+All the sensors and statuses are exposed through the sysfs interface for the
+user space application access.
+
+Thermal tables for the minimum FAN setting per system time. It contains
+entries with ambient temperature threshold values and relevant minimum
+speed setting. All Mellanox system are equipped with two ambient sensors:
+port side ambient sensor and FAN side ambient sensor. FAN direction can
+be read from FAN EEPROM data, in case FAN is equipped with EEPROM device,
+it can be read from CPLD FAN direction register in other case. Or for the
+common case it can be calculated according to the next rule:
+if port side ambient sensor value is greater than FAN side ambient sensor
+value - the direction is power to cable (forward); if it less - the direction
+is cable to power (reversed), if these value are equal: the direction is
+unknown. For each system the following six tables are defined:
+p2c_dir_trust_tx	all cables with trusted or with no sensors, FAN
+			direction is power to cable (forward)
+p2c_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
+			power to cable (forward)
+c2p_dir_trust_tx	all cables with trusted or with no sensors, FAN
+			direction is cable to power (reversed)
+c2p_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
+			cable to power (reversed)
+unk_dir_trust_tx	all cables with trusted or with no sensors, FAN
+			direction is unknown
+unk_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
+			unknown
+
+Thermal zones thresholds setting for CPU and ASIC per system type (port
+thresholds if supported are read from ports EEPROM data). It contains the
+threshold for monitoring activation - when the temperature is above this
+threshold, thermal control should be active and when temperature is above
+this threshold, thermal control should be passive. And it contains the
+critical threshold. When the temperature is above this threshold, FANs should
+be at maximum speed or system shutdown should be performed.
+
+Location:
 https://github.com/MellanoxBSP/thermal-control
 
 ## Authors

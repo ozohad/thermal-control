@@ -1,9 +1,28 @@
 #!/bin/bash
 #
 
+# Thermal configuration per system type. The next types are supported:
+#  t1: MSN21*			Bulldog
+#  t2: MSN274*			Panther SF
+#  t3: MSN24*			Spider
+#  t4: MSN27*|MSB*|MSX*		Neptune, Tarantula, Scorpion, Scorpion2
+#  t5: MSN201*			Boxer
+#  t6: QMB7*|SN37*|SN34*	Jupiter, Jaguar, Anaconda
+
+# The thermal algorithm considers the next rules for FAN speed setting:
+# This is because the absence of power supply has bad impact on air flow.
+# The minimal PWM setting is dynamic and depends on FAN direction and cable
+# type. For system with copper cables only or/and with trusted optic cable
+# minimum PWM setting could be decreased according to the system definition.
+# Thermal active monitoring is performed based on the values of the next three
+# sensors: CPU temperature, ASIC temperature and port cumulative temperature.
+# The decision for PWM setting is taken based on the worst measure of them.
+# All the sensors and statuses are exposed through the sysfs interface for the
+# user space application access.
+
 . /lib/lsb/init-functions
 
-# Paths to thermal sensors
+# Paths to thermal sensors device present states and threshold parameters
 thermal_path=/config/mellanox/thermal
 pwm_min=$thermal_path/pwm_min
 temp1_input_port=$thermal_path/temp1_input_port
@@ -28,25 +47,25 @@ system_thermal_type=${1:-$system_thermal_type_def}
 polling_time=${2:-$polling_time_def}
 pwm_min_speed=${3:-$pwm_min_speed_def}
 
-# Thermal configuration per system type. The next types are supported:
-#  t1: MSN21*			Bulldog
-#  t2: MSN274*			Panther SF
-#  t3: MSN24*			Spider
-#  t4: MSN27*|MSB*|MSX*		Neptune, Tarantula, Scorpion, Scorpion2
-#  t5: MSN201*			Boxer
-#  t6: QMB7*|SN37*|SN34*	Jupiter, Jaguar, Anaconda
-
 # Thermal tables for the minimum FAN setting per system time. It contains
 # entries with ambient temperature threshold values and relevant minimum
-# speed setting. For each system six following tables are defined:
+# speed setting. All Mellanox system are equipped with two ambient sensors:
+# port side ambient sensor and FAN side ambient sensor. FAN direction can
+# be read from FAN EEPROM data, in case FAN is equipped with EEPROM device,
+# it can be read from CPLD FAN direction register in other case. Or for the
+# common case it can be calculated according to the next rule:
+# if port side ambient sensor value is greater than FAN side ambient sensor
+# value - the direction is power to cable (forward); if it less - the direction
+# is cable to power (reversed), if these value are equal: the direction is
+# unknown. For each system the following six tables are defined:
 # p2c_dir_trust_tx	all cables with trusted or with no sensors, FAN
-#			direction is forward
+#			direction is power to cable (forward)
 # p2c_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
-#			forward
+#			power to cable (forward)
 # c2p_dir_trust_tx	all cables with trusted or with no sensors, FAN
-#			direction is backward
+#			direction is cable to power (reversed)
 # c2p_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
-#			backward
+#			cable to power (reversed)
 # unk_dir_trust_tx	all cables with trusted or with no sensors, FAN
 #			direction is unknown
 # unk_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
