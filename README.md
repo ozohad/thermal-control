@@ -49,11 +49,31 @@ unk_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
 
 Thermal zones thresholds setting for CPU and ASIC per system type (port
 thresholds if supported are read from ports EEPROM data). It contains the
-threshold for monitoring activation - when the temperature is above this
+thresholds for monitoring activation - when the temperature is above this
 threshold, thermal control should be active and when temperature is above
 this threshold, thermal control should be passive. And it contains the
 critical threshold. When the temperature is above this threshold, FANs should
 be at maximum speed or system shutdown should be performed.
+
+Package contains the following files:
+/lib/systemd/system/mellanox-thermal.service
+	system entries for thermal control activation and de-activation.
+/lib/udev/rules.d/50-mellanox-thermal-events.rules
+	udev rules defining the triggers on which events should be handled.  
+	When trigger is matched, rule data is to be passed to the event handler
+	(see below file /usr/bin/mellanox-thermal-events.sh).
+/usr/bin/mellanox-thermal-control.sh
+	contains thermal algorithm implementation.
+/usr/bin/mellanox-thermal-events.sh
+	handles udev triggers, according to the received data, it creates or
+	destroys symbolic links to sysfs entries. It allows to create system
+	independent entries and it allows thermal controls to work over this
+	system independent model.
+/usr/bin/mellanox-thermal.sh
+	performs initialization and de-initialization, detects the system type,
+	connects thermal drivers according to the system topology, activates
+	and deactivates thermal algorithm.
+
 
 Location:
 https://github.com/MellanoxBSP/thermal-control

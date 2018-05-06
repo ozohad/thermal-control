@@ -12,6 +12,7 @@
 # (at your option) any later version.
 #
 
+# Local variables
 thermal_path=/config/mellanox/thermal
 
 if [ "$1" == "add" ]; then

@@ -1,21 +1,14 @@
 #!/bin/bash
+########################################################################
+# Copyright (c) 2018 Mellanox Technologies.
+# Copyright (c) 2018 Vadim Pasternak <vadimp@mellanox.com>
 #
-# Copyright (C) 2010-2017, Mellanox Technologies Ltd.  ALL RIGHTS RESERVED.
+# Licensed under the GNU General Public License Version 2
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
-#
 #
 
 ### BEGIN INIT INFO
@@ -43,6 +36,15 @@
 
 . /lib/lsb/init-functions
 
+# Local constants and variables
+thermal_type=0
+thermal_type_t1=1
+thermal_type_t2=2
+thermal_type_t3=3
+thermal_type_t4=4
+thermal_type_t4=4
+thermal_type_t5=5
+
 module_load_path=(	i2c/i2c-dev.ko \
 			hwmon/lm75.ko \
 			hwmon/tmp102.ko \
@@ -51,13 +53,7 @@ module_load_path=(	i2c/i2c-dev.ko \
 module_unload_list=(	tmp102 lm75 mlxsw_minimal i2c_dev)
 
 msn2700_connect_table=(	mlxsw_minimal 0x48 2 \
-			pmbus 0x27 5 \
-			pmbus 0x41 5 \
-			max11603 0x6d 5 \
 			lm75 0x4a 7 \
-			24c32 0x51 8 \
-			max11603 0x6d 15 \
-			24c32 0x51 16 \
 			lm75 0x49 17)
 
 msn2700_dis_table=(	0x4a 7 \
@@ -117,6 +113,8 @@ msn274x_specific()
 	do
 		dis_table[i]=${msn2740_dis_table[i]}
 	done
+
+	thermal_type=$thermal_type_t1
 }
 
 msn21xx_specific()
@@ -131,6 +129,8 @@ msn21xx_specific()
 	do
 		dis_table[i]=${msn2100_dis_table[i]}
 	done
+
+	thermal_type=$thermal_type_t1
 }
 
 msn24xx_specific()
@@ -145,6 +145,8 @@ msn24xx_specific()
 	do
 		dis_table[i]=${msn2700_dis_table[i]}
 	done
+
+	thermal_type=$thermal_type_t1
 }
 
 msn27xx_msb_msx_specific()
@@ -159,6 +161,8 @@ msn27xx_msb_msx_specific()
 	do
 		dis_table[i]=${msn2700_dis_table[i]}
 	done
+
+	thermal_type=$thermal_type_t1
 }
 
 msn201x_specific()
@@ -173,6 +177,8 @@ msn201x_specific()
 	do
 		dis_table[i]=${msn2010_dis_table[i]}
 	done
+
+	thermal_type=$thermal_type_t1
 }
 
 qmb7xxx_sn37x_sn34x_specific()
@@ -187,6 +193,8 @@ qmb7xxx_sn37x_sn34x_specific()
 	do
 		dis_table[i]=${qmb700_dis_table[i]}
 	done
+
+	thermal_type=$thermal_type_t1
 }
 
 check_system()
@@ -377,7 +385,7 @@ case $ACTION in
 		load_modules
 		sleep 1
 		connect_platform
-		mellanox-thermal-contol.sh &
+		mellanox-thermal-contol.sh $thermal_type &
 	;;
         stop)
 		# Kill thermal control if running
