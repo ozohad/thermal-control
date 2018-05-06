@@ -1,0 +1,11 @@
+[Unit]
+Description=Mellanox thermal control
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStart=/bin/sh -c "mellanox-thermal.sh start"
+ExecStop=/bin/sh -c "mellanox-thermal.sh stop"
+
+[Install]
+WantedBy=multi-user.target

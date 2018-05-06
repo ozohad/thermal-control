@@ -86,7 +86,7 @@ unk_dir_untrust_t1=(15000 20 25000 30 30000 40 35000 50 40000 60)
 # critical threshold. When the temperature is above this threshold, FANs should
 # be at maximum speed or system shutdown should be performed.
 cpu_zones_t1=(90000 110000)
-asic_zones_t1=(75000 110000)
+asic_zones_t1=(75000 80000 85000 105000 110000)
 
 # Local constants
 pwm_noact=0
@@ -97,19 +97,24 @@ temp_trend_unchanged=0
 temp_trend_up=1
 temp_trend_down=2
 temp_normal=0
-temp_monitored=1
-temp_critical=2
+temp_high=1
+temp_hot=2
+temp_warning=3
+temp_critical=4
 
 # Local variables
 pwm_required_cpu=$pwm_noact
+pwm_required_cpu_pending=$pwm_noact
 temp_trend_cpu=$temp_trend_unchanged
 temp_state_cpu=$temp_normal
 temp_input_cpu=0
 pwm_required_asic=$pwm_noact
+pwm_required_asic_pending=$pwm_noact
 temp_trend_asic=$temp_trend_unchanged
 temp_state_asic=$temp_normal
 temp_input_asic=0
 pwm_required_port=$pwm_noact
+pwm_required_port_pending=$pwm_noact
 temp_trend_port=$temp_trend_unchanged
 temp_state_port=$temp_normal
 temp_input_port=0
@@ -121,6 +126,7 @@ unk_dir=0
 ambient=0
 pwm_max_state=0
 pwm_cur_state=0
+hysteresis_trip=5000
 
 config_p2c_dir_trust()
 {
@@ -357,8 +363,8 @@ get_cpu_temp()
 					;;
 			esac
 			;;
-		$temp_monitored)
-			temp_state_cpu=$temp_monitored
+		$temp_high)
+			temp_state_cpu=$temp_high
 			case $temp_trend_cpu in
 				$temp_trend_unchanged)
 					pwm_required_cpu=$pwm_noact
@@ -395,12 +401,17 @@ get_asic_temp()
 	fi
 
 	# If ASIC temperature is in critical state FAN speed should be at
-	# maximum or system thermal shutdown should be performed. If ASIC is in
-	# normal state it does not require any change in FAN speed setting. If
-	# ASIC temperature is in monitoring state and trend is unchanged - no
-	# action is required, if trend is up or down - respectively speed
-	# increasing or decreasing is required. Find to which zone the current
-	# temperature belongs
+	# maximum or system thermal shutdown should be performed. 
+	# If ASIC temperature is in warning state FAN speed should be at
+	# maximum.
+	# If ASIC temperature is in hot state FAN speed should be at
+	# maximum.
+	# If ASIC temperature is in high or normal state FAN speed FAN
+	# speed throttling is required according to the temperature trend.
+	# If ASIC temperature is in monitoring state and trend is unchanged -
+	# no action is required, if trend is up or down - respectively speed
+	# increasing or decreasing is required.
+	# Find to which zone the current temperature belongs.
 	size=${#temp_thresholds_asic[@]}
 	for ((i=0; i<$size; i++))
 	do
@@ -464,31 +475,48 @@ get_port_temp()
 	# normal state it does not require any change in FAN speed setting. If
 	# port temperature is in monitoring state and trend is unchanged - no
 	# action is required, if trend is up or down - respectively speed
-	# increasing or decreasing is required. Find to which zone the current
-	# temperature belongs
-	temp_crit=`cat $temp1_crit_port`
-	temp_crit_alarm=`cat $temp1_crit_alarm_port`
-	if [ $temp -lt $temp_crit ]; then
-		temp_state_port=$temp_normal
-		case $prev_state in
-			$temp_normal)
-				pwm_required_port=$pwm_noact
-				;;
-			*)
-				pwm_required_port=$pwm_down
-				;;
-		esac
-	elif [ $temp -gt $temp_crit ]; then
-		temp_state_port=$temp_critical
+	# increasing or decreasing is required. For FAN speed decreasing, the
+	# value for trip point should be taken with  hysteresis adjustment.
+	# Find to which zone the current temperature belongs.
+	hot=`cat $temp1_crit_port`
+	high=`cat $temp1_crit_alarm_port`
+	if [ $temp -gt $hot ]; then
+		# Hot temperature
+		temp_state_port=$temp_hot
 		pwm_required_port=$pwm_max
-	else
-		temp_state_port=$temp_monitored
+	elif [ $temp -gt $high ]; then
+		# High temperature
+		hysteresis=$(($hot-$hysteresis_trip))
+		temp_state_port=$temp_high
 		case $temp_trend_port in
 			$temp_trend_unchanged)
 				pwm_required_port=$pwm_noact
 				;;
 			$temp_trend_down)
-				pwm_required_port=$pwm_down
+				if [ temp -lt hysteresis ]; then
+					pwm_required_port=$pwm_down
+				else
+					pwm_required_port=$pwm_noact
+				fi
+				;;
+			$temp_trend_up)
+				pwm_required_port=$pwm_up
+				;;
+			esac
+	else
+		# Normal temperature
+		hysteresis=$(($high-$hysteresis_trip))
+		temp_state_port=$temp_normal
+		case $temp_trend_port in
+			$temp_trend_unchanged)
+				pwm_required_port=$pwm_noact
+				;;
+			$temp_trend_down)
+				if [ temp -lt hysteresis ]; then
+					pwm_required_port=$pwm_down
+				else
+					pwm_required_port=$pwm_noact
+				fi
 				;;
 			$temp_trend_up)
 				pwm_required_port=$pwm_up
@@ -529,6 +557,40 @@ case $system_thermal_type in
 		exit 0
 		;;
 esac
+
+thermal_control_exit()
+{
+	if [ -f /var/run/mlxsw_thermal/zone1 ]; then
+		rm -rf /var/run/mlxsw_thermal/zone1
+	fi
+
+	echo "Thermal control is terminated (PID=$thermal_control_pid)"
+	exit 1
+}
+
+# Handle the next POSIX signals by thermal_control_exit:
+# SIGINT	2	Terminal interrupt signal.
+# SIGKILL	9	Kill (cannot be caught or ignored).
+# SIGTERM	15	Termination signal.
+trap 'thermal_control_exit' 2 9 15
+
+# Initialization during start up
+thermal_control_pid=$$
+if [ -f /var/run/mlxsw_thermal/zone1 ]; then
+	zone1=`cat /var/run/mlxsw_thermal/zone1`
+	# Only one instance of thermal control could be activated
+	if [ -d /proc/$zone1 ]; then
+		echo Thermal control is already running
+		exit 0
+	fi
+fi
+
+if [ ! -d /var/run/mlxsw_thermal ]; then
+	mkdir -p /var/run/mlxsw_thermal
+fi
+
+echo $thermal_control_pid > /var/run/mlxsw_thermal/zone1
+echo "Thermal control is started (PID=$thermal_control_pid)"
 
 # Set initial values
 echo $pwm_min_speed > $pwm_min
