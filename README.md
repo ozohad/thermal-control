@@ -23,8 +23,8 @@ The decision for PWM setting is taken based on the worst measure of them.
 All the sensors and statuses are exposed through the sysfs interface for the
 user space application access.
 
-Thermal tables for the minimum FAN setting per system time. It contains
-entries with ambient temperature threshold values and relevant minimum
+Thermal tables for the minimum FAN setting per are defined per system type and
+contains entries with ambient temperature threshold values and relevant minimum
 speed setting. All Mellanox system are equipped with two ambient sensors:
 port side ambient sensor and FAN side ambient sensor. FAN direction can
 be read from FAN EEPROM data, in case FAN is equipped with EEPROM device,
@@ -55,7 +55,7 @@ this threshold, thermal control should be passive. And it contains the
 critical threshold. When the temperature is above this threshold, FANs should
 be at maximum speed or system shutdown should be performed.
 
-Package contains the following files:
+Package contains the following files, used within the workload:
 /lib/systemd/system/mellanox-thermal.service
 	system entries for thermal control activation and de-activation.
 /lib/udev/rules.d/50-mellanox-thermal-events.rules
@@ -74,9 +74,24 @@ Package contains the following files:
 	connects thermal drivers according to the system topology, activates
 	and deactivates thermal algorithm.
 
+Package contains the folder debian, with the rules for Debian package build.
 
 Location:
 https://github.com/MellanoxBSP/thermal-control
+
+For Debian package build:
+a) git clone https://github.com/MellanoxBSP/thermal-control.git
+b) Go into thermal-control base folder and build Debian package.
+	cd thermal-control
+c) Run:
+debuild -us -uc
+d) Find f.e. mellanox-thermal.V2.0.XXXX_amd64.deb
+
+For converting deb package to rpm package
+a) Install alien package
+b) sudo alien -r mellanox-thermal.V2.0.XXXX_amd64.deb
+c) Find mellanox-thermal.V2.0.XXXX_amd64.rpm
+
 
 ## Authors
 

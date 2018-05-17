@@ -14,69 +14,50 @@
 
 # Local variables
 thermal_path=/config/mellanox/thermal
+max_psus=2
+max_tachos=12
 
 if [ "$1" == "add" ]; then
-	if [ "$2" == "board_amb" ] || [ "$2" == "port_amb" ]; then
+	if [ "$2" == "fan_amb" ] || [ "$2" == "port_amb" ]; then
 		ln -sf $3$4/temp1_input $thermal_path/$2
-		ln -sf $3$4/temp1_max $thermal_path/$2_max
-		ln -sf $3$4/temp1_max_hyst $thermal_path/$2_hyst
 	fi
-	if [ "$2" == "asic" ]; then
-		ln -sf $3$4/temp1_input $thermal_path/$2
-		ln -sf $3$4/temp1_highest $thermal_path/$2_highest
-	fi
-	if [ "$2" == "fan" ]; then
-		# Take time for adding infrastructure
-		sleep 3
-		ln -sf $3$4/pwm1  $thermal_path/$pwm1
+	if [ "$2" == "switch" ]; then
+		if [ $3$4/name == "mlxsw" ]; then
+			ln -sf $3$4/temp1_input $thermal_path/$2
+			ln -sf $3$4/pwm1  $thermal_path/$pwm1
+			for i in {1..$max_tachos}; do
+				if [ -f $3$4/fan"$i"_fault ]; then
+					ln -sf $3$4/fan"$i"_fault $thermal_path/fan"$i"_fault
+				fi
+			done
+		elif [ $3$4/name == "mlxsw_port" ]; then
+			ln -sf $3$4/temp1_input $thermal_path/temp1_input_port
+			ln -sf $3$4/temp1_fault $thermal_path/temp1_fault_port
+		fi
 	fi
 	if [ "$2" == "thermal_zone" ]; then
 		busfolder=`basename $3$4`
 		zonename=`echo $5`
 		zonetype=`cat $3$4/type`
 		if [ "$zonetype" == "mlxsw" ]; then
-			# Set theraml zone governer to user space
-			echo user_space > $3$4/policy
-			# Enable thermal algorithm
-			echo enabled > $3$4/mode
-			zone=$zonetype
-		else
-			zone=$zonename-$zonetype
+			ln -sf $3$4/mode $thermal_path/thermal_zone_mode
 		fi
-		mkdir -p /bsp/thermal_zone/$zone
-		ln -sf $3$4/mode /bsp/thermal_zone/$zone/mode
-		for i in {0..11}; do
-			if [ -f $3$4/trip_point_"$i"_temp ]; then
-				ln -sf $3$4/trip_point_"$i"_temp /bsp/thermal_zone/$zone/trip_point_$i
-			fi
-			if [ -d $3$4/cdev"$i" ]; then
-				ln -sf $3$4/cdev"$i"/cur_state /bsp/thermal_zone/$zone/cooling"$i"_current_state
-			fi
-		done
 	fi
-	if [ "$2" == "cputemp" ]; then
-		for i in {1..9}; do
-			if [ -f $3$4/temp"$i"_input ]; then
-				if [ $i -eq 1 ]; then
-					name="pack"
-				else
-					id=$(($i-2))
-					name="core$id"
-				fi
-				ln -sf $3$4/temp"$i"_input $thermal_path/cpu_$name
-				ln -sf $3$4/temp"$i"_crit $thermal_path/cpu_"$name"_crit
-				ln -sf $3$4/temp"$i"_crit_alarm $thermal_path/cpu_"$name"_crit_alarm
-				ln -sf $3$4/temp"$i"_max $thermal_path/cpu_"$name"_max
-			fi
-		done
+	if [ "$2" == "cooling_device" ]; then
+		busfolder=`basename $3$4`
+		coolingname=`echo $5`
+		coolingtype=`cat $3$4/type`
+		if [ "$coolingtype" == "Fan" ]; then
+			ln -sf $3$4/cur_state $thermal_path/cooling_cur_state
+		fi
 	fi
 	if [ "$2" == "hotplug" ]; then
-		for i in {1..12}; do
+		for i in {1..$max_tachos}; do
 			if [ -f $3$4/fan$i ]; then
 				ln -sf $3$4/fan$i $thermal_path/fan"$i"_status
 			fi
 		done
-		for i in {1..2}; do
+		for i in {1..$max_psus}; do
 			if [ -f $3$4/psu$i ]; then
 				ln -sf $3$4/psu$i $thermal_path/psu"$i"_status
 			fi
@@ -84,62 +65,48 @@ if [ "$1" == "add" ]; then
   	fi
 elif [ "$1" == "change" ]; then
 	echo "Do nothing on change"
-elif [ "$1" == "offline" ]; then
-	echo "Do nothing on offline"
 else
-	if [ "$2" == "board_amb" ] || [ "$2" == "port_amb" ]; then
+	if [ "$2" == "fan_amb" ] || [ "$2" == "port_amb" ]; then
 		unlink $thermal_path/$2
-		unlink $thermal_path/$2_max
-		unlink $thermal_path/$2_hyst
 	fi
-	if [ "$2" == "asic" ]; then
-		unlink $thermal_path/$2
-		unlink $thermal_path/$2_highest
-	fi
-	if [ "$2" == "fan" ]; then
-		unlink  $thermal_path/$pwm1
-	fi
-	if [ "$2" == "thermal_zone" ]; then
-		zonefolder=`basename /bsp/thermal_zone/$5*`
-		if [ ! -d /bsp/thermal_zone/$zonefolder ]; then
-			zonefolder=mlxsw
-		fi
-		if [ -d /bsp/thermal_zone/$zonefolder ]; then
-			unlink /bsp/thermal_zone/$zonefolder/mode
-			for i in {0..11}; do
-				if [ -L /bsp/thermal_zone/$zonefolder/trip_point_$i ]; then
-					unlink /bsp/thermal_zone/$zonfoldere/trip_point_$i
-				fi
-				if [ -L /bsp/thermal_zone/$zonefolder/cooling"$i"_current_state ]; then
-					unlink /bsp/thermal_zone/$zonefolder/cooling"$i"_current_state
+	if [ "$2" == "switch" ]; then
+		if [ $3$4/name == "mlxsw" ]; then
+			unlink $thermal_path/$2
+			for i in {1..$max_tachos}; do
+				if [ -f $thermal_path//fan"$i"_fault ]; then
+					unlink $thermal_path/fan"$i"_fault
 				fi
 			done
-			unlink /bsp/thermal_zone/$zonefolder/*
-			rm -rf /bsp/thermal_zone/$zonefolder
+			unlink  $thermal_path/$pwm1
+		elif [ $3$4/name == "mlxsw_port" ]; then
+			unlink $thermal_path/temp1_input_port
+			unlink $thermal_path/temp1_fault_port
 		fi
-  	fi
-	if [ "$2" == "cputemp" ]; then
-		unlink $thermal_path/cpu_pack
-		unlink $thermal_path/cpu_pack_crit
-		unlink $thermal_path/cpu_pack_crit_alarm
-		unlink $thermal_path/cpu_pack_max
-		for i in {1..8}; do
-			if [ -L $thermal_path/cpu_core"$i" ]; then
-				j=$((i+1))
-				unlink $thermal_path/cpu_core"$j"
-				unlink $thermal_path/cpu_core"$j"_crit
-				unlink $thermal_path/cpu_core"$j"_crit_alarm
-				unlink $thermal_path/cpu_core"$j"_max
-			fi
-		done
+	fi
+	if [ "$2" == "thermal_zone" ]; then
+		busfolder=`basename $3$4`
+		zonename=`echo $5`
+		zonetype=`cat $3$4/type`
+		if [ "$zonetype" == "mlxsw" ]; then
+			unlink $thermal_path/thermal_zone_mode
+		fi
+	fi
+
+	if [ "$2" == "cooling_device" ]; then
+		busfolder=`basename $3$4`
+		coolingname=`echo $5`
+		coolingtype=`cat $3$4/type`
+		if [ "$coolingtype" == "Fan" ]; then
+			unlink $thermal_path/cooling_cur_state
+		fi
 	fi
 	if [ "$2" == "hotplug" ]; then
-		for i in {1..12}; do
+		for i in {1..$max_tachos}; do
 			if [ -L $thermal_path/fan"$i"_status ]; then
 				unlink $thermal_path/fan"$i"_status
 			fi
 		done
-		for i in {1..2}; do
+		for i in {1..$max_psus}; do
 			if [ -L $thermal_path/psu"$i"_status ]; then
 				unlink $thermal_path/psu"$i"_status
 			fi
