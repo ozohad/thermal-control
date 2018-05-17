@@ -168,6 +168,8 @@ max_tachos=12
 
 # Local variables
 pwm_required=$pwm_noact
+fan_dynamic_min=12
+fan_dynamic_min_last=12
 untrusted_sensor=0
 p2c_dir=0
 cp2_dir=0
@@ -276,6 +278,7 @@ get_fan_faults()
 				pwm_required_act=$pwm_max
 				echo disabled > $tz_mode
 				echo $pwm_max_rpm > $pwm1
+				return
 			fi
 		fi
 	done
@@ -311,7 +314,8 @@ set_pwm_min_threshold()
 		unk_dir=1
 	fi
 
-	# Set FAN minimum speed according to direction and cable type and trust
+	# Set FAN minimum speed according to FAN direction, cable type and
+	# presence of untrusted cabels.
 	if [ $untrusted_sensor -eq 0 ]; then
 		if [ $p2c_dir -eq 1 ]; then
 			size=${#p2c_dir_trust[@]}
@@ -319,7 +323,7 @@ set_pwm_min_threshold()
 			do
 				tresh=${p2c_dir_trust[i]}
 				if [ $ambient -lt $tresh ]; then
-					echo $p2c_dir_trust[$(($i+1))] > $cooling_cur_state
+					echo $p2c_dir_trust[$(($i+1))] > $fan_dynamic_min
 					break
 				fi
 			done
@@ -329,7 +333,7 @@ set_pwm_min_threshold()
 			do
 				tresh=${c2p_dir_trust[i]}
 				if [ $ambient -lt $tresh ]; then
-					echo $c2p_dir_trust[$(($i+1))] > $cooling_cur_state
+					echo $c2p_dir_trust[$(($i+1))] > $fan_dynamic_min
 					break
 				fi
 			done
@@ -339,7 +343,7 @@ set_pwm_min_threshold()
 			do
 				tresh=${unk_dir_trust[i]}
 				if [ $ambient -lt $tresh]; then
-					echo $unk_dir_trust[$(($i+1))] > $cooling_cur_state
+					echo $unk_dir_trust[$(($i+1))] > $fan_dynamic_min
 					break
 				fi
 			done
@@ -351,7 +355,7 @@ set_pwm_min_threshold()
 			do
 				tresh=${unk_dir_untrust[i]}
 				if [ $ambient -lt $tresh ]; then
-					echo ${unk_dir_untrust[$(($i+1))]} > $cooling_cur_state
+					echo ${unk_dir_untrust[$(($i+1))]} > $fan_dynamic_min
 					break
 				fi
 			done
@@ -361,7 +365,7 @@ set_pwm_min_threshold()
 			do
 				tresh=${c2p_dir_untrust[i]}
 				if [ $ambient -lt $tresh ]; then
-					echo $c2p_dir_untrust[$(($i+1))] > $cooling_cur_state
+					echo $c2p_dir_untrust[$(($i+1))] > $fan_dynamic_min
 					break
 				fi
 			done
@@ -371,7 +375,7 @@ set_pwm_min_threshold()
 			do
 				tresh=${unk_dir_untrust[i]}
 				if [ $ambient -lt $tresh ]; then
-					echo $unk_dir_untrust[$(($i+1))] > $cooling_cur_state
+					echo $unk_dir_untrust[$(($i+1))] > $fan_dynamic_min
 					break
 				fi
 			done
@@ -381,28 +385,22 @@ set_pwm_min_threshold()
 
 case $system_thermal_type in
 	1)
-		# Config FAN minimal speed setting
+		# Config FAN minimal speed setting for class t1
 		config_p2c_dir_trust "${p2c_dir_trust_t1[@]}"
 		config_p2c_dir_untrust "${p2c_dir_untrust_t1[@]}"
 		config_c2p_dir_trust "${c2p_dir_trust_t1[@]}"
 		config_c2p_dir_untrust "${c2p_dir_untrust_t1[@]}"
 		config_unk_dir_trust "${unk_dir_trust_t1[@]}"
 		config_unk_dir_untrust "${unk_dir_untrust_t1[@]}"
-		# Config thermal zones for monitoring
-		config_thermal_zones_cpu "${cpu_zones_t1[@]}"
-		config_thermal_zones_asic "${asic_zones_t1[@]}"
 		;;
 	2)
-		# Config FAN minimal speed setting
+		# Config FAN minimal speed setting for class t2
 		config_p2c_dir_trust "${p2c_dir_trust_t2[@]}"
 		config_p2c_dir_untrust "${p2c_dir_untrust_t2[@]}"
 		config_c2p_dir_trust "${c2p_dir_trust_t2[@]}"
 		config_c2p_dir_untrust "${c2p_dir_untrust_t2[@]}"
 		config_unk_dir_trust "${unk_dir_trust_t2[@]}"
 		config_unk_dir_untrust "${unk_dir_untrust_t2[@]}"
-		# Config thermal zones for monitoring
-		config_thermal_zones_cpu "${cpu_zones_t2[@]}"
-		config_thermal_zones_asic "${asic_zones_t2[@]}"
 		;;
 	*)
 		echo thermal type $system_thermal_type is not supported
@@ -454,7 +452,7 @@ do
 	if [ $pwm_required_act -eq $pwm_max ]; then
 		continue
 	fi
-	# If one of tachometers  is faulty  disable thermal zone and set PWM
+	# If one of tachometers is faulty disable thermal zone and set PWM
 	# to the maximum speed.
 	get_fan_faults
 	if [ $pwm_required_act -eq $pwm_max ]; then
@@ -466,7 +464,13 @@ do
 	fi
 	# Set dynamic FAN speed minimum, depending on ambient temperature,
 	# presence of untrusted optical cables or presence of any cables
-	# with untrusted temperature sensing. 
+	# with untrusted temperature sensing.
 	set_pwm_min_threshold
+	# Update cooling levels of FAN If dynamic minimum has been changed
+	# since the last time.
+	if [ $fan_dynamic_min -ne $fan_dynamic_min_last ]; then
+		echo fan_dynamic_min > $cooling_cur_state
+		fan_dynamic_min_last=$fan_dynamic_min
+	fi
 done
 

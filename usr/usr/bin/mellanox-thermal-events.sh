@@ -22,15 +22,14 @@ if [ "$1" == "add" ]; then
 		ln -sf $3$4/temp1_input $thermal_path/$2
 	fi
 	if [ "$2" == "switch" ]; then
-		if [ $3$4/name == "mlxsw" ]; then
-			ln -sf $3$4/temp1_input $thermal_path/$2
-			ln -sf $3$4/pwm1  $thermal_path/$pwm1
-			for i in {1..$max_tachos}; do
+		name=`cat $3$4/name`
+		if [ "$name" == "mlxsw" ]; then
+			for ((i=1; i<=$max_tachos; i+=1)); do
 				if [ -f $3$4/fan"$i"_fault ]; then
 					ln -sf $3$4/fan"$i"_fault $thermal_path/fan"$i"_fault
 				fi
 			done
-		elif [ $3$4/name == "mlxsw_port" ]; then
+		elif [ "$name" == "mlxsw_port" ]; then
 			ln -sf $3$4/temp1_input $thermal_path/temp1_input_port
 			ln -sf $3$4/temp1_fault $thermal_path/temp1_fault_port
 		fi
@@ -52,12 +51,12 @@ if [ "$1" == "add" ]; then
 		fi
 	fi
 	if [ "$2" == "hotplug" ]; then
-		for i in {1..$max_tachos}; do
+		for ((i=1; i<=$max_tachos; i+=1)); do
 			if [ -f $3$4/fan$i ]; then
 				ln -sf $3$4/fan$i $thermal_path/fan"$i"_status
 			fi
 		done
-		for i in {1..$max_psus}; do
+		for ((i=1; i<=$max_psus; i+=1)); do
 			if [ -f $3$4/psu$i ]; then
 				ln -sf $3$4/psu$i $thermal_path/psu"$i"_status
 			fi
@@ -70,15 +69,15 @@ else
 		unlink $thermal_path/$2
 	fi
 	if [ "$2" == "switch" ]; then
-		if [ $3$4/name == "mlxsw" ]; then
-			unlink $thermal_path/$2
-			for i in {1..$max_tachos}; do
-				if [ -f $thermal_path//fan"$i"_fault ]; then
+		name=`cat $3$4/name`
+		if [ "$name" == "mlxsw" ]; then
+			for ((i=1; i<=$max_tachos; i+=1)); do
+				if [ -L $thermal_path/fan"$i"_fault ]; then
 					unlink $thermal_path/fan"$i"_fault
 				fi
 			done
 			unlink  $thermal_path/$pwm1
-		elif [ $3$4/name == "mlxsw_port" ]; then
+		elif [ "$name" == "mlxsw_port" ]; then
 			unlink $thermal_path/temp1_input_port
 			unlink $thermal_path/temp1_fault_port
 		fi
@@ -101,12 +100,12 @@ else
 		fi
 	fi
 	if [ "$2" == "hotplug" ]; then
-		for i in {1..$max_tachos}; do
+		for ((i=1; i<=$max_tachos; i+=1)); do
 			if [ -L $thermal_path/fan"$i"_status ]; then
 				unlink $thermal_path/fan"$i"_status
 			fi
 		done
-		for i in {1..$max_psus}; do
+		for ((i=1; i<=$max_psus; i+=1)); do
 			if [ -L $thermal_path/psu"$i"_status ]; then
 				unlink $thermal_path/psu"$i"_status
 			fi
