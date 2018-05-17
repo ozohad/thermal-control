@@ -12,12 +12,12 @@
 #
 
 # Thermal configuration per system type. The next types are supported:
-#  t1: MSN21*			Bulldog
-#  t2: MSN274*			Panther SF
-#  t3: MSN24*			Spider
-#  t4: MSN27*|MSB*|MSX*		Neptune, Tarantula, Scorpion, Scorpion2
-#  t5: MSN201*			Boxer
-#  t6: QMB7*|SN37*|SN34*	Jupiter, Jaguar, Anaconda
+#  t1: MSN27*|MSN24*		Panther, Spider
+#  t2: MSN21*			Bulldog
+#  t3: MSN274*			Panther SF
+#  t4: MSN201*			Boxer
+#  t5: MSN27*|MSB*|MSX*		Neptune, Tarantula, Scorpion, Scorpion2
+#  t6: QMB7*|SN37*|SN34*	Jaguar, Anaconda
 
 # The thermal algorithm considers the next rules for FAN speed setting:
 # This is because the absence of power supply has bad impact on air flow.
@@ -79,7 +79,31 @@ polling_time=${2:-$polling_time_def}
 # minimal FAN speed is coded as following: 12 for 20%, 13 for 30%, ..., 19 for
 # 90%, 20 for 100%.
 
-# Class t1 for MSN21* (Bulldog)
+# Class t1 for MSN27*|MSN24* (Panther, Spider)
+# Direction	P2C		C2P		Unknown
+#--------------------------------------------------------------
+# Amb [C]	copper/	AOC W/O copper/	AOC W/O	copper/	AOC W/O
+#		sensors	sensor	sensor	sensor	sensor	sensor
+#--------------------------------------------------------------
+#  <0		30	30	30	30	30	30
+#  0-5		30	30	30	30	30	30
+#  5-10		30	30	30	30	30	30
+# 10-15		30	30	30	30	30	30
+# 15-20		30	30	30	30	30	30
+# 20-25		30	30	40	40	40	40
+# 25-30		30	40	50	50	50	50
+# 30-35		30	50	60	60	60	60
+# 35-40		30	60	60	60	60	60
+# 40-45		50	60	60	60	60	60
+
+p2c_dir_trust_t1=(45000 13)
+p2c_dir_untrust_t1=(25000 13 30000 14 30000 14 35000 15 40000 16)
+c2p_dir_trust_12=(20000 13 25000 14 30000 15 35000 16)
+c2p_dir_untrust_t1=(20000 13 25000 14 30000 15 35000 16)
+unk_dir_trust_t1=(20000 13 25000 14 30000 15 35000 16)
+unk_dir_untrust_t1=(20000 13 25000 14 30000 15 35000 16)
+
+# Class t2 for MSN21* (Bulldog)
 # Direction	P2C		C2P		Unknown
 #--------------------------------------------------------------	
 # Amb [C]	copper/	AOC W/O copper/	AOC W/O	copper/	AOC W/O
@@ -96,12 +120,46 @@ polling_time=${2:-$polling_time_def}
 # 35-40		20	60	20	20	20	60
 # 40-45		20	60	30	30	30	60
 
-p2c_dir_trust_t1=(45000 12)
-p2c_dir_untrust_t1=(15000 12 25000 13 30000 14 35000 15 40000 16)
-c2p_dir_trust_t1=(40000 12 45000 13)
-c2p_dir_untrust_t1=(40000 12 45000 13)
-unk_dir_trust_t1=(40000 12 45000 13)
-unk_dir_untrust_t1=(15000 12 25000 13 30000 14 35000 15 40000 16)
+p2c_dir_trust_t2=(45000 12)
+p2c_dir_untrust_t2=(15000 12 25000 13 30000 14 35000 15 40000 16)
+c2p_dir_trust_t2=(40000 12 45000 13)
+c2p_dir_untrust_t2=(40000 12 45000 13)
+unk_dir_trust_t2=(40000 12 45000 13)
+unk_dir_untrust_t2=(15000 12 25000 13 30000 14 35000 15 40000 16)
+
+# Class t3 for MSN274* (Panther SF)
+# Direction	P2C		C2P		Unknown
+#--------------------------------------------------------------
+# Amb [C]	copper/	AOC W/O copper/	AOC W/O	copper/	AOC W/O
+#		sensors	sensor	sensor	sensor	sensor	sensor
+#--------------------------------------------------------------
+#  <0		30	30	30	30	30	30
+#  0-5		30	30	30	30	30	30
+#  5-10		30	30	30	30	30	30
+# 10-15		30	30	30	30	30	30
+# 15-20		30	30	30	40	30	40
+# 20-25		30	30	30	40	30	40
+# 25-30		30	30	30	40	30	40
+# 30-35		30	30	30	50	30	50
+# 35-40		30	40	30	70	30	70
+# 40-45		30	50	30	70	30	70
+
+# Class t4 for MSN201* (Boxer)
+# Direction	P2C		C2P		Unknown
+#--------------------------------------------------------------
+# Amb [C]	copper/	AOC W/O copper/	AOC W/O	copper/	AOC W/O
+#		sensors	sensor	sensor	sensor	sensor	sensor
+#--------------------------------------------------------------
+#  <0		20	20	20	20	20	20
+#  0-5		20	20	20	20	20	20
+#  5-10		20	20	20	20	20	20
+# 10-15		20	20	20	20	20	20
+# 15-20		20	30	20	20	20	30
+# 20-25		20	40	20	30	20	40
+# 25-30		20	40	20	40	20	40
+# 30-35		20	50	20	50	20	50
+# 35-40		20	60	20	60	20	60
+# 40-45		20	60	20	60	20	60
 
 # Local constants
 pwm_noact=0
@@ -333,6 +391,18 @@ case $system_thermal_type in
 		# Config thermal zones for monitoring
 		config_thermal_zones_cpu "${cpu_zones_t1[@]}"
 		config_thermal_zones_asic "${asic_zones_t1[@]}"
+		;;
+	2)
+		# Config FAN minimal speed setting
+		config_p2c_dir_trust "${p2c_dir_trust_t2[@]}"
+		config_p2c_dir_untrust "${p2c_dir_untrust_t2[@]}"
+		config_c2p_dir_trust "${c2p_dir_trust_t2[@]}"
+		config_c2p_dir_untrust "${c2p_dir_untrust_t2[@]}"
+		config_unk_dir_trust "${unk_dir_trust_t2[@]}"
+		config_unk_dir_untrust "${unk_dir_untrust_t2[@]}"
+		# Config thermal zones for monitoring
+		config_thermal_zones_cpu "${cpu_zones_t2[@]}"
+		config_thermal_zones_asic "${asic_zones_t2[@]}"
 		;;
 	*)
 		echo thermal type $system_thermal_type is not supported

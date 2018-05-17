@@ -23,7 +23,7 @@
 #  MSN274*		Panther SF
 #  MSN21*		Bulldog
 #  MSN24*		Spider
-#  MSN27*|MSB*|MSX*	Neptune, Tarantula, Scorpion, Scorpion2
+#  MSN27*|MSB*|MSX*	Neptune, Tarantula, Scorpion, Scorpion2, Spider
 #  MSN201*		Boxer
 #  QMB7*|SN37*|SN34*	Jupiter, Jaguar, Anaconda
 # Available options:
@@ -130,7 +130,7 @@ msn21xx_specific()
 		dis_table[i]=${msn2100_dis_table[i]}
 	done
 
-	thermal_type=$thermal_type_t1
+	thermal_type=$thermal_type_t3
 }
 
 msn24xx_specific()
@@ -178,7 +178,7 @@ msn201x_specific()
 		dis_table[i]=${msn2010_dis_table[i]}
 	done
 
-	thermal_type=$thermal_type_t1
+	thermal_type=$thermal_type_t4
 }
 
 qmb7xxx_sn37x_sn34x_specific()
@@ -194,7 +194,7 @@ qmb7xxx_sn37x_sn34x_specific()
 		dis_table[i]=${qmb700_dis_table[i]}
 	done
 
-	thermal_type=$thermal_type_t1
+	thermal_type=$thermal_type_t5
 }
 
 check_system()
