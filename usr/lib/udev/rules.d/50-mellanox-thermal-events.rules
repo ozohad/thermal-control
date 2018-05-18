@@ -11,34 +11,34 @@
 #
 
 # Ambient temperatures (lm75, tmp102)
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-6/6-0049/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add fan_amb %S %p"
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-6/6-0049/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm fan_amb %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-0049/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add fan_amb %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-0049/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm fan_amb %S %p"
 
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-6/6-004a/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add port_amb %S %p"
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-6/6-004a/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm port_amb %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-004a/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add port_amb %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-004a/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm port_amb %S %p"
 
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-7/7-0048/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add port_amb %S %p"
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-7/7-0048/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm port_amb %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-0048/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add port_amb %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-0048/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm port_amb %S %p"
 
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-7/7-0049/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add fan_amb %S %p"
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-7/7-0049/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm fan_amb %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-0049/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add fan_amb %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-0049/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm fan_amb %S %p"
 
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-7/7-004a/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add port_amb %S %p"
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-7/7-004a/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm port_amb %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-004a/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add port_amb %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-004a/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm port_amb %S %p"
 
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-7/7-004b/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add fan_amb %S %p"
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-7/7-004b/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm fan_amb %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-004b/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add fan_amb %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-004b/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm fan_amb %S %p"
 
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-17/17-0049/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add fan_amb %S %p"
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-17/17-0049/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm fan_amb %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-0049/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add fan_amb %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-0049/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm fan_amb %S %p"
 
 # Switch - FAN, ASIC and ports temperatures (I2C)
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-2/2-0048/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add switch %S %p"
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-1/i2c-2/2-0048/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm switch %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-0048/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add switch %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-0048/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm switch %S %p"
 
 # Switch - FAN and temperatures (PCI)
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/pci0000:00/*/*/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add switch %S %p"
-SUBSYSTEM=="hwmon", DEVPATH=="/devices/pci0000:00/*/*/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm switch %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/pci0000:00/0000:*/0000:*/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add switch %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/pci0000:00/0000:*/0000:*/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm switch %S %p"
 
 # Cooling device
 SUBSYSTEM=="thermal", KERNEL=="cooling_device*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add cooling_device %S %p %k"
