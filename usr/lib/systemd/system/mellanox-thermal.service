@@ -7,8 +7,6 @@ RemainAfterExit=true
 ExecStart=/bin/sh -c "/usr/bin/mellanox-thermal.sh start"
 ExecStop=/bin/sh -c "/usr/bin/mellanox-thermal.sh stop"
 PIDFile=/var/run/mellanox-thermal.pid
-Restart=always
-RestartSec=30s
 
 [Install]
 WantedBy=multi-user.target
