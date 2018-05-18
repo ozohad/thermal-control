@@ -12,16 +12,22 @@ Supported systems:
 - QMB7*|SN37*|SN34* Jupiter, Jaguar, Anaconda
 
 Description:
-The thermal algorithm considers the next rules for FAN speed setting:
-This is because the absence of power supply has bad impact on air flow.
-The minimal PWM setting is dynamic and depends on FAN direction and cable
-type. For system with copper cables only or/and with trusted optic cable
-minimum PWM setting could be decreased according to the system definition.
-Thermal active monitoring is performed based on the values of the next three
-sensors: CPU temperature, ASIC temperature and port cumulative temperature.
-The decision for PWM setting is taken based on the worst measure of them.
-All the sensors and statuses are exposed through the sysfs interface for the
-user space application access.
+The thermal monitoring is performed in kernel space. The thermal zone binds PWM
+control and the temperature measure, which is accumulated temperature from the
+ports and from the ASIC.
+
+This package provides additional functionally to the thermal control, which
+contains the following polices:
+- Setting PWM to full speed if one of PS units is not present (in such case
+  thermal monitoring in kernel is set to disabled state until the problem is
+  not recovered).
+- Setting PWM to full speed if one of FAN drawers is not present or one of
+  tachometers is broken present (in such case thermal monitoring in kernel is
+  set to disabled state until the problem is not recovered).
+- Setting PWM dynamic speed minimum. The dynamic setting depends on FAN
+  direction and cable type. For system with copper cables only or/and with
+  trusted optic cable minimum PWM setting could be decreased according to the
+  system definition.
 
 Thermal tables for the minimum FAN setting per are defined per system type and
 contains entries with ambient temperature threshold values and relevant minimum
@@ -47,14 +53,6 @@ unk_dir_trust_tx	all cables with trusted or with no sensors, FAN
 unk_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
 			unknown
 
-Thermal zones thresholds setting for CPU and ASIC per system type (port
-thresholds if supported are read from ports EEPROM data). It contains the
-thresholds for monitoring activation - when the temperature is above this
-threshold, thermal control should be active and when temperature is above
-this threshold, thermal control should be passive. And it contains the
-critical threshold. When the temperature is above this threshold, FANs should
-be at maximum speed or system shutdown should be performed.
-
 Package contains the following files, used within the workload:
 /lib/systemd/system/mellanox-thermal.service
 	system entries for thermal control activation and de-activation.
@@ -79,19 +77,24 @@ Package contains the folder debian, with the rules for Debian package build.
 Location:
 https://github.com/MellanoxBSP/thermal-control
 
+To get package sources:
+git clone https://github.com/MellanoxBSP/thermal-control.git
+
 For Debian package build:
-a) git clone https://github.com/MellanoxBSP/thermal-control.git
-b) Go into thermal-control base folder and build Debian package.
-	cd thermal-control
-c) Run:
+On a debian-based system, install the following programs:
+sudo apt-get install devscripts build-essential lintian
+
+a) Go into thermal-control base folder and build Debian package.
+b) Run:
 debuild -us -uc
-d) Find f.e. mellanox-thermal.V2.0.XXXX_amd64.deb
+c) Find in upper folder f.e. mellanox-thermal_1.mlnx.18.05.2018_amd64.deb
 
-For converting deb package to rpm package
-a) Install alien package
-b) sudo alien -r mellanox-thermal.V2.0.XXXX_amd64.deb
-c) Find mellanox-thermal.V2.0.XXXX_amd64.rpm
+For converting deb package to rpm package:
+On a debian-based system, install the following program:
+sudo apt-get install alien
 
+a) alien --to-rpm mellanox-thermal_1.mlnx.18.05.2018_amd64.deb
+b) Find mellanox-thermal-1.mlnx.18.05.2018-2.x86_64.rpm
 
 ## Authors
 
