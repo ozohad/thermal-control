@@ -36,20 +36,24 @@
 thermal_path=/config/mellanox/thermal
 temp1_input_port=$thermal_path/temp1_input_port
 temp1_fault_port=$thermal_path/temp1_fault_port
-temp1_input_fan_amb=$thermal_path/temp1_input_fan_amb
-temp1_input_port_amb=$thermal_path/temp1_input_port_amb
-temp1_input_cpu=$thermal_path/temp1_input_cpu
+temp1_input_fan_amb=$thermal_path/fan_amb
+temp1_input_port_amb=$thermal_path/port_amb
 pwm1=$thermal_path/pwm1
 psu1_present=$thermal_path/psu1
 psu2_present=$thermal_path/psu2
 tz_mode=$thermal_path/mode
 cooling_cur_state=$thermal_path/cooling_cur_state
 
-# Input params for sensors polling time (sec) and system thermal class
+# Input parameters for the system thermal class, the number of tachometers, the
+# number of replicable power supply units and for sensors polling time (seconds)
 system_thermal_type_def=1
 polling_time_def=15
+max_tachos_def=12
+max_psus_def=2
 system_thermal_type=${1:-$system_thermal_type_def}
-polling_time=${2:-$polling_time_def}
+max_tachos=${2:-$max_tachos_def}
+max_psus=${3:-$max_psus_def}
+polling_time=${4:-$polling_time_def}
 
 # Thermal tables for the minimum FAN setting per system time. It contains
 # entries with ambient temperature threshold values and relevant minimum
@@ -164,7 +168,7 @@ unk_dir_untrust_t2=(15000 12 25000 13 30000 14 35000 15 40000 16)
 # Local constants
 pwm_noact=0
 pwm_max=1
-max_tachos=12
+pwm_max_rpm=255
 
 # Local variables
 pwm_required=$pwm_noact
@@ -180,8 +184,7 @@ config_p2c_dir_trust()
 {
 	array=("$@")
 	size=${#array[@]}
-	for ((i=0; i<$size; i++))
-	do
+	for ((i=0; i<$size; i++)); do
 		p2c_dir_trust[i]=${array[i]}
 	done
 }
@@ -190,8 +193,7 @@ config_p2c_dir_untrust()
 {
 	array=("$@")
 	size=${#array[@]}
-	for ((i=0; i<$size; i++))
-	do
+	for ((i=0; i<$size; i++)); do
 		p2c_dir_untrust[i]=${array[i]}
 	done
 }
@@ -200,8 +202,7 @@ config_c2p_dir_trust()
 {
 	array=("$@")
 	size=${#array[@]}
-	for ((i=0; i<$size; i++))
-	do
+	for ((i=0; i<$size; i++)); do
 		c2p_dir_trust[i]=${array[i]}
 	done
 }
@@ -210,8 +211,7 @@ config_c2p_dir_untrust()
 {
 	array=("$@")
 	size=${#array[@]}
-	for ((i=0; i<$size; i++))
-	do
+	for ((i=0; i<$size; i++)); do
 		c2p_dir_untrust[i]=${array[i]}
 	done
 }
@@ -220,8 +220,7 @@ config_unk_dir_trust()
 {
 	array=("$@")
 	size=${#array[@]}
-	for ((i=0; i<$size; i++))
-	do
+	for ((i=0; i<$size; i++)); do
 		unk_dir_trust[i]=${array[i]}
 	done
 }
@@ -230,8 +229,7 @@ config_unk_dir_untrust()
 {
 	array=("$@")
 	size=${#array[@]}
-	for ((i=0; i<$size; i++))
-	do
+	for ((i=0; i<$size; i++)); do
 		unk_dir_untrust[i]=${array[i]}
 	done
 }
@@ -240,8 +238,7 @@ config_thermal_zones_cpu()
 {
 	array=("$@")
 	size=${#array[@]}
-	for ((i=0; i<$size; i++))
-	do
+	for ((i=0; i<$size; i++)); do
 		temp_thresholds_cpu[i]=${array[i]}
 	done
 }
@@ -250,30 +247,33 @@ config_thermal_zones_asic()
 {
 	array=("$@")
 	size=${#array[@]}
-	for ((i=0; i<$size; i++))
-	do
+	for ((i=0; i<$size; i++)); do
 		temp_thresholds_asic[i]=${array[i]}
 	done
 }
 
 get_psu_presence()
 {
-	psu1_presence=`cat $psu1_present`
-	psu2_presence=`cat $psu2_present`
-	if [ $psu1_presence -eq 0 -o $psu2_presence -eq 0 ]; then
-		pwm_required_act=$pwm_max
-		echo disabled > $tz_mode
-		echo $pwm_max_rpm > $pwm1
-	else
-		pwm_required_act=$pwm_noact
-	fi
+	for ((i=1; i<=$max_psus; i+=1)); do
+		if [ -f $thermal_path/psu"$i"_present ]; then
+			present=`cat $psu"$i"_present`
+			if [ $present -eq 0 ]; then
+				pwm_required_act=$pwm_max
+				echo disabled > $tz_mode
+				echo $pwm_max_rpm > $pwm1
+				return
+			fi
+		fi
+	done
+
+	pwm_required_act=$pwm_noact
 }
 
 get_fan_faults()
 {
-	for i in {1..$max_tachos}; do
+	for ((i=1; i<=$max_tachos; i+=1)); do
 		if [ -f $thermal_path/fan"$i"_fault ]; then
-			fault=`cat $thermal_path/fan"$i"_fault``
+			fault=`cat $thermal_path/fan"$i"_fault`
 			if [ $fault -eq 1 ]; then
 				pwm_required_act=$pwm_max
 				echo disabled > $tz_mode
@@ -319,8 +319,7 @@ set_pwm_min_threshold()
 	if [ $untrusted_sensor -eq 0 ]; then
 		if [ $p2c_dir -eq 1 ]; then
 			size=${#p2c_dir_trust[@]}
-			for ((i=0; i<$size; i+=2))
-			do
+			for ((i=0; i<$size; i+=2)); do
 				tresh=${p2c_dir_trust[i]}
 				if [ $ambient -lt $tresh ]; then
 					echo $p2c_dir_trust[$(($i+1))] > $fan_dynamic_min
@@ -329,8 +328,7 @@ set_pwm_min_threshold()
 			done
 		elif [ $c2p_dir -eq 1 ]; then
 			size=${#c2p_dir_trust[@]}
-			for ((i=0; i<$size; i+=2))
-			do
+			for ((i=0; i<$size; i+=2)); do
 				tresh=${c2p_dir_trust[i]}
 				if [ $ambient -lt $tresh ]; then
 					echo $c2p_dir_trust[$(($i+1))] > $fan_dynamic_min
@@ -339,8 +337,7 @@ set_pwm_min_threshold()
 			done
 		else
 			size=${#unk_dir_trust[@]}
-			for ((i=0; i<$size; i+=2))
-			do
+			for ((i=0; i<$size; i+=2)); do
 				tresh=${unk_dir_trust[i]}
 				if [ $ambient -lt $tresh]; then
 					echo $unk_dir_trust[$(($i+1))] > $fan_dynamic_min
@@ -351,8 +348,7 @@ set_pwm_min_threshold()
 	else
 		if [ $p2c_dir -eq 1 ]; then
 			size=${#p2c_dir_untrust[@]}
-			for ((i=0; i<$size; i+=2))
-			do
+			for ((i=0; i<$size; i+=2)); do
 				tresh=${unk_dir_untrust[i]}
 				if [ $ambient -lt $tresh ]; then
 					echo ${unk_dir_untrust[$(($i+1))]} > $fan_dynamic_min
@@ -361,8 +357,7 @@ set_pwm_min_threshold()
 			done
 		elif [ $c2p_dir -eq 1 ]; then
 			size=${#c2p_dir_untrust[@]}
-			for ((i=0; i<$size; i+=2))
-			do
+			for ((i=0; i<$size; i+=2)); do
 				tresh=${c2p_dir_untrust[i]}
 				if [ $ambient -lt $tresh ]; then
 					echo $c2p_dir_untrust[$(($i+1))] > $fan_dynamic_min
@@ -371,8 +366,7 @@ set_pwm_min_threshold()
 			done
 		else
 			size=${#unk_dir_untrust[@]}
-			for ((i=0; i<$size; i+=2))
-			do
+			for ((i=0; i<$size; i+=2)); do
 				tresh=${unk_dir_untrust[i]}
 				if [ $ambient -lt $tresh ]; then
 					echo $unk_dir_untrust[$(($i+1))] > $fan_dynamic_min
@@ -410,11 +404,11 @@ esac
 
 thermal_control_exit()
 {
-	if [ -f /var/run/mlxsw_thermal/zone1 ]; then
-		rm -rf /var/run/mlxsw_thermal/zone1
+	if [ -f /var/run/mellanox-thermal.pid ]; then
+		rm -rf /var/run/mellanox-thermal.pid
 	fi
 
-	echo "Thermal control is terminated (PID=$thermal_control_pid)"
+	echo "Mellanox thermal control is terminated (PID=$thermal_control_pid)"
 	exit 1
 }
 
@@ -426,21 +420,17 @@ trap 'thermal_control_exit' 2 9 15
 
 # Initialization during start up
 thermal_control_pid=$$
-if [ -f /var/run/mlxsw_thermal/zone1 ]; then
-	zone1=`cat /var/run/mlxsw_thermal/zone1`
+if [ -f /var/run/mellanox-thermal.pid ]; then
+	zone1=`cat /var/run/mellanox-thermal.pid`
 	# Only one instance of thermal control could be activated
 	if [ -d /proc/$zone1 ]; then
-		echo Thermal control is already running
+		echo Mellanox thermal control is already running
 		exit 0
 	fi
 fi
 
-if [ ! -d /var/run/mlxsw_thermal ]; then
-	mkdir -p /var/run/mlxsw_thermal
-fi
-
-echo $thermal_control_pid > /var/run/mlxsw_thermal/zone1
-echo "Thermal control is started (PID=$thermal_control_pid)"
+echo $thermal_control_pid > /var/run/mellanox-thermal.pid
+echo "Mellanox thermal control is started (PID=$thermal_control_pid)"
 
 # Start thermal monitoring 
 while true
@@ -473,4 +463,3 @@ do
 		fan_dynamic_min_last=$fan_dynamic_min
 	fi
 done
-

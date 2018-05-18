@@ -1,5 +1,4 @@
 #!/bin/bash
-
 ########################################################################
 # Copyright (c) 2018 Mellanox Technologies.
 # Copyright (c) 2018 Vadim Pasternak <vadimp@mellanox.com>
@@ -24,6 +23,7 @@ if [ "$1" == "add" ]; then
 	if [ "$2" == "switch" ]; then
 		name=`cat $3$4/name`
 		if [ "$name" == "mlxsw" ]; then
+			ln -sf $3$4/pwm1 $thermal_path/pwm1
 			for ((i=1; i<=$max_tachos; i+=1)); do
 				if [ -f $3$4/fan"$i"_fault ]; then
 					ln -sf $3$4/fan"$i"_fault $thermal_path/fan"$i"_fault
@@ -71,6 +71,7 @@ else
 	if [ "$2" == "switch" ]; then
 		name=`cat $3$4/name`
 		if [ "$name" == "mlxsw" ]; then
+			unlink $thermal_path/pwm1
 			for ((i=1; i<=$max_tachos; i+=1)); do
 				if [ -L $thermal_path/fan"$i"_fault ]; then
 					unlink $thermal_path/fan"$i"_fault

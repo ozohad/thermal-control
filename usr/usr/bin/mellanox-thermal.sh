@@ -44,6 +44,8 @@ thermal_type_t3=3
 thermal_type_t4=4
 thermal_type_t4=4
 thermal_type_t5=5
+max_psus=2
+max_tachos=12
 
 module_load_path=(	i2c/i2c-dev.ko \
 			hwmon/lm75.ko \
@@ -115,6 +117,7 @@ msn274x_specific()
 	done
 
 	thermal_type=$thermal_type_t1
+	max_tachos=4
 }
 
 msn21xx_specific()
@@ -131,6 +134,9 @@ msn21xx_specific()
 	done
 
 	thermal_type=$thermal_type_t3
+	thermal_type=$thermal_type_t1
+	max_tachos=8
+	max_psus=0
 }
 
 msn24xx_specific()
@@ -147,6 +153,7 @@ msn24xx_specific()
 	done
 
 	thermal_type=$thermal_type_t1
+	max_tachos=8
 }
 
 msn27xx_msb_msx_specific()
@@ -163,6 +170,7 @@ msn27xx_msb_msx_specific()
 	done
 
 	thermal_type=$thermal_type_t1
+	max_tachos=8
 }
 
 msn201x_specific()
@@ -179,6 +187,8 @@ msn201x_specific()
 	done
 
 	thermal_type=$thermal_type_t4
+	max_tachos=8
+	max_psus=0
 }
 
 qmb7xxx_sn37x_sn34x_specific()
@@ -376,21 +386,17 @@ disconnect_platform()
 
 case $ACTION in
         start)
-		if [ ! -d /config/mellanox/thermal ]; then
-			mkdir -p /config/mellanox/thermal
-		fi
-
 		check_system
 		depmod -a 2>/dev/null
 		load_modules
 		sleep 1
 		connect_platform
-		mellanox-thermal-contol.sh $thermal_type &
+		mellanox-thermal-control.sh $thermal_type $mac_tachos $max_psus &
 	;;
         stop)
 		# Kill thermal control if running
-		if [ -f /var/run/mlxsw_thermal/zone1 ]; then
-			thermal_control_pid=`cat /var/run/mlxsw_thermal/zone1`
+		if [ -f /var/run/mellanox-thermal.pid ]; then
+			thermal_control_pid=`cat /var/run/mellanox-thermal.pid`
 			if [ -d /proc/$thermal_watch_pid ]; then
 				kill $thermal_control_pid
 			fi
@@ -411,7 +417,6 @@ case $ACTION in
 					unlink $filename
 				fi
 			done
-			rm -rf /config/mellanox/thermal/
 		fi
 	;;
 	*)

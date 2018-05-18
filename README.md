@@ -96,6 +96,36 @@ sudo apt-get install alien
 a) alien --to-rpm mellanox-thermal_1.mlnx.18.05.2018_amd64.deb
 b) Find mellanox-thermal-1.mlnx.18.05.2018-2.x86_64.rpm
 
+## Installation from local file and de-installation
+Copy deb or rpm package to the system, for example to /tmp.
+
+For deb package install with:
+dpkg -i /tmp/ mellanox-thermal_1.mlnx.18.05.2018_amd64.deb
+remove with:
+dpkg --purge mellanox-thermal
+
+For rpm install with:
+yum localinstall /tmp/mellanox-thermal-1.mlnx.18.05.2018-2.x86_64.rpm
+or
+rpm -ivh -r /tmp mellanox-thermal-1.mlnx.18.05.2018-2.x86_64.rpm
+remove with:
+yum remove mellanox-thermal
+or
+rpm -e mellanox-thermal
+
+
+## Activation, de-activation and reading status
+mellanox-thermal can be initialized and de-initialized by systemd service.
+The next command could be used in order to configure persistent initialization
+and de-initialization of mellanox-thermal:
+systemctl enable mellanox-thermal
+systemctl disable mellanox-thermal
+Running status of mellanox-thermal unit can be obtained by the following
+commands:
+systemctl status mellanox-thermal
+journalctl --unit=mellanox-thermal
+
+
 ## Authors
 
 * **Michael Shych** <michaelsh@mellanox.com>
