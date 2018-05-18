@@ -1,0 +1,11 @@
+Source: mellanox-thermal
+Priority: extra
+Maintainer: MellanoxBSP <system-sw-low-level@mellanox.com>
+Build-Depends:
+Standards-Version:
+Section: libs
+Homepage: http://www.mellanox.com
+
+Package:mellanox-thermal
+Architecture: any
+Description: Thermal control for Mellanox systems
