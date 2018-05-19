@@ -12,13 +12,7 @@
 #
 
 ### BEGIN INIT INFO
-# Provides:        bsp for Mellanox systems
-# Required-Start:  $syslog 
-# Required-Stop:   $syslog
-# Default-Start:   2 3 4 5       
-# Default-Stop:    0 1 6
-# Short-Description: Mellanox x86 MSN systems bsp
-# Description:       Mellanox system support
+# Provides:		Thermal control for Mellanox systems
 # Supported systems:
 #  MSN274*		Panther SF
 #  MSN21*		Bulldog
@@ -27,11 +21,10 @@
 #  MSN201*		Boxer
 #  QMB7*|SN37*|SN34*	Jupiter, Jaguar, Anaconda
 # Available options:
-# start        - install all BSP kernel drivers, connect drivers to devices, create BSP dictionary as symbolic
-#                links to sysfs entries
-# stop         - destroy BSP dictionary, disconnect drivers from devices, uninstall BSP kernel drivers
-# restart      - combined stop and start sequence
-#                driver reloading
+# start	- load the kernel drivers required for the thermal control support,
+#	  connect drivers to devices, activate thermal control.
+# stop	- disconnect drivers from devices, unload kernel drivers, which has
+#	  been loaded, deactivate thermal control.
 ### END INIT INFO
 
 . /lib/lsb/init-functions
@@ -46,13 +39,21 @@ thermal_type_t4=4
 thermal_type_t5=5
 max_psus=2
 max_tachos=12
+i2c_bus_max=10
+i2c_bus_offset=0
+thermal_path=/config/mellanox/thermal
 
-module_load_path=(	i2c/i2c-dev.ko \
-			hwmon/lm75.ko \
+# Topology description and driver specification for ambient sensors and for
+# ASIC I2C driver per system class. Specific system class is obtained from DMI
+# tables. ASIC I2C driver is supposed to be activated only in case PCI ASIC
+# driver is not loaded. Both perform the same thermal algorithm and exposes
+# the same sensors to sysfs. In case PCI path is available, access will be
+# performed through PCI. 
+module_load_path=(	hwmon/lm75.ko \
 			hwmon/tmp102.ko \
 			net/ethernet/mellanox/mlxsw/mlxsw_minimal.ko)
 
-module_unload_list=(	tmp102 lm75 mlxsw_minimal i2c_dev)
+module_unload_list=(	tmp102 lm75 mlxsw_minimal)
 
 msn2700_connect_table=(	mlxsw_minimal 0x48 2 \
 			lm75 0x4a 7 \
@@ -264,6 +265,26 @@ check_system()
 	kernel_release=`uname -r`
 }
 
+find_i2c_bus()
+{
+	# Find physical bus number of Mellanox I2C controller. The default
+	# number is 1, but it could be assigned to others id numbers on
+	# systems with different CPU types.
+	for ((i=1; i<$i2c_bus_max; i++)); do
+		folder=/sys/bus/i2c/devices/i2c-$i
+		if [ -d $folder ]; then
+			name=`cat $folder/name | cut -d' ' -f 1`
+			if [ "$name" == "i2c-mlxcpld" ]; then
+				i2c_bus_offset=$i
+				return
+			fi
+		fi
+	done
+
+	echo i2c-mlxcpld driver is not loaded
+	exit 0
+}
+
 load_module()
 {
 	filename=`basename /lib/modules/${kernel_release}/kernel/drivers/$1`
@@ -317,9 +338,10 @@ connect_device()
 {
 	if [ -f /sys/bus/i2c/devices/i2c-$3/new_device ]; then
 		addr=`echo $2 | tail -c +3`
-		if [ ! -d /sys/bus/i2c/devices/$3-00$addr ] &&
-		   [ ! -d /sys/bus/i2c/devices/$3-000$addr ]; then
-			echo $1 $2 > /sys/bus/i2c/devices/i2c-$3/new_device
+		bus=$(($3+$i2c_bus_offset))
+		if [ ! -d /sys/bus/i2c/devices/$bus-00$addr ] &&
+		   [ ! -d /sys/bus/i2c/devices/$bus-000$addr ]; then
+			echo $1 $2 > /sys/bus/i2c/devices/i2c-$bus/new_device
 		fi
 	fi
 
@@ -330,9 +352,10 @@ disconnect_device()
 {
 	if [ -f /sys/bus/i2c/devices/i2c-$2/delete_device ]; then
 		addr=`echo $1 | tail -c +3`
-		if [ -d /sys/bus/i2c/devices/$2-00$addr ] ||
-		   [ -d /sys/bus/i2c/devices/$2-000$addr ]; then
-			echo $1 > /sys/bus/i2c/devices/i2c-$2/delete_device
+		bus=$(($2+$i2c_bus_offset))
+		if [ -d /sys/bus/i2c/devices/$bus-00$addr ] ||
+		   [ -d /sys/bus/i2c/devices/$bus-000$addr ]; then
+			echo $1 > /sys/bus/i2c/devices/i2c-$bus/delete_device
 		fi
 	fi
 
@@ -387,6 +410,7 @@ disconnect_platform()
 case $ACTION in
         start)
 		check_system
+		find_i2c_bus
 		depmod -a 2>/dev/null
 		load_modules
 		sleep 1
@@ -394,10 +418,10 @@ case $ACTION in
 		mellanox-thermal-control.sh $thermal_type $mac_tachos $max_psus &
 	;;
         stop)
-		# Kill thermal control if running
+		# Kill thermal control if running.
 		if [ -f /var/run/mellanox-thermal.pid ]; then
 			thermal_control_pid=`cat /var/run/mellanox-thermal.pid`
-			if [ -d /proc/$thermal_watch_pid ]; then
+			if [ -d /proc/$thermal_control_pid ]; then
 				kill $thermal_control_pid
 			fi
 		fi
@@ -405,23 +429,15 @@ case $ACTION in
 		check_system
 		disconnect_platform
 		unload_modules
-		# Clean thermal directory - remove folder if it's empty
-		if [ -d /config/mellanox/thermal ]; then
+		# Clean thermal directory.
+		if [ -d $thermal_path ]; then
 			sleep 3
-			for filename in /config/mellanox/thermal/*; do
-				if [ -d $filename ]; then
-					if [ -z "$(ls -A $filename)" ]; then
-						rm -rf $filename
-					fi
-				elif [ -L $filename ]; then
-					unlink $filename
-				fi
-			done
+			rm -rf $thermal_path/*
 		fi
 	;;
 	*)
 		echo
-		echo "Usage: `basename $0` {start|stop|restart}"
+		echo "Usage: `basename $0` {start|stop}"
 		echo
 		exit 1
 	;;
