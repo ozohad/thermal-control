@@ -124,6 +124,9 @@ Running status of mellanox-thermal unit can be obtained by the following
 commands:
 systemctl status mellanox-thermal
 journalctl --unit=mellanox-thermal
+Once "systemctl enable mellanox-thermal" is invoked, the thermal control will
+be automatically activated after the next and the following system reboots,
+until "systemctl disable mellanox-thermal" is not invoked.
 
 
 ## Authors

@@ -45,10 +45,14 @@ thermal_path=/config/mellanox/thermal
 
 # Topology description and driver specification for ambient sensors and for
 # ASIC I2C driver per system class. Specific system class is obtained from DMI
-# tables. ASIC I2C driver is supposed to be activated only in case PCI ASIC
-# driver is not loaded. Both perform the same thermal algorithm and exposes
-# the same sensors to sysfs. In case PCI path is available, access will be
-# performed through PCI. 
+# tables.
+# ASIC I2C driver is supposed to be activated only in case PCI ASIC driver is
+# not loaded. Both perform the same thermal algorithm and exposes the same
+# sensors to sysfs. In case PCI path is available, access will be performed
+# through PCI.
+# Hardware monitoring related drivers for ambient temperature sensing will be
+# loaded in case they were not loaded before or in case these drivers are not
+# configured as modules.
 module_load_path=(	hwmon/lm75.ko \
 			hwmon/tmp102.ko \
 			net/ethernet/mellanox/mlxsw/mlxsw_minimal.ko)
@@ -107,13 +111,11 @@ is_module()
 msn274x_specific()
 {
 	connect_size=${#msn2740_connect_table[@]}
-	for ((i=0; i<$connect_size; i++))
-	do
+	for ((i=0; i<$connect_size; i++)); do
 		connect_table[i]=${msn2740_connect_table[i]}
 	done
 	disconnect_size=${#msn2740_dis_table[@]}
-	for ((i=0; i<$disconnect_size; i++))
-	do
+	for ((i=0; i<$disconnect_size; i++)); do
 		dis_table[i]=${msn2740_dis_table[i]}
 	done
 
@@ -124,13 +126,11 @@ msn274x_specific()
 msn21xx_specific()
 {
 	connect_size=${#msn2100_connect_table[@]}
-	for ((i=0; i<$connect_size; i++))
-	do
+	for ((i=0; i<$connect_size; i++)); do
 		connect_table[i]=${msn2100_connect_table[i]}
 	done
 	disconnect_size=${#msn2100_dis_table[@]}
-	for ((i=0; i<$disconnect_size; i++))
-	do
+	for ((i=0; i<$disconnect_size; i++)); do
 		dis_table[i]=${msn2100_dis_table[i]}
 	done
 
@@ -143,13 +143,11 @@ msn21xx_specific()
 msn24xx_specific()
 {
 	connect_size=${#msn2700_connect_table[@]}
-	for ((i=0; i<$connect_size; i++))
-	do
+	for ((i=0; i<$connect_size; i++)); do
 		connect_table[i]=${msn2700_connect_table[i]}
 	done
 	disconnect_size=${#msn2700_dis_table[@]}
-	for ((i=0; i<$disconnect_size; i++))
-	do
+	for ((i=0; i<$disconnect_size; i++)); do
 		dis_table[i]=${msn2700_dis_table[i]}
 	done
 
@@ -160,13 +158,11 @@ msn24xx_specific()
 msn27xx_msb_msx_specific()
 {
 	connect_size=${#msn2700_connect_table[@]}
-	for ((i=0; i<$connect_size; i++))
-	do
+	for ((i=0; i<$connect_size; i++)); do
 		connect_table[i]=${msn2700_connect_table[i]}
 	done
 	disconnect_size=${#msn2700_dis_table[@]}
-	for ((i=0; i<$disconnect_size; i++))
-	do
+	for ((i=0; i<$disconnect_size; i++)); do
 		dis_table[i]=${msn2700_dis_table[i]}
 	done
 
@@ -177,13 +173,11 @@ msn27xx_msb_msx_specific()
 msn201x_specific()
 {
 	connect_size=${#msn2010_connect_table[@]}
-	for ((i=0; i<$connect_size; i++))
-	do
+	for ((i=0; i<$connect_size; i++)); do
 		connect_table[i]=${msn2010_connect_table[i]}
 	done
 	disconnect_size=${#msn2010_dis_table[@]}
-	for ((i=0; i<$disconnect_size; i++))
-	do
+	for ((i=0; i<$disconnect_size; i++)); do
 		dis_table[i]=${msn2010_dis_table[i]}
 	done
 
@@ -195,13 +189,11 @@ msn201x_specific()
 qmb7xxx_sn37x_sn34x_specific()
 {
 	connect_size=${#qmb700_connect_table[@]}
-	for ((i=0; i<$connect_size; i++))
-	do
+	for ((i=0; i<$connect_size; i++)); do
 		connect_table[i]=${qmb700_connect_table[i]}
 	done
 	disconnect_size=${#qmb700_dis_table[@]}
-	for ((i=0; i<$disconnect_size; i++))
-	do
+	for ((i=0; i<$disconnect_size; i++)); do
 		dis_table[i]=${qmb700_dis_table[i]}
 	done
 
@@ -275,7 +267,7 @@ find_i2c_bus()
 		if [ -d $folder ]; then
 			name=`cat $folder/name | cut -d' ' -f 1`
 			if [ "$name" == "i2c-mlxcpld" ]; then
-				i2c_bus_offset=$i
+				i2c_bus_offset=$(($i-1))
 				return
 			fi
 		fi
@@ -364,12 +356,11 @@ disconnect_device()
 
 load_modules()
 {
-	log_daemon_msg "Starting Mellanox x86 system bsp modules"
+	log_daemon_msg "Loading modukes, used by Mellanox thermal control"
 	log_end_msg 0
 
-	COUNT=${#module_load_path[@]}
-	for ((i=0; i<$COUNT; i++))
-	do
+	count=${#module_load_path[@]}
+	for ((i=0; i<$count; i++)); do
 		load_module ${module_load_path[i]}
 	done
 
@@ -378,12 +369,11 @@ load_modules()
 
 unload_modules()
 {
-	log_daemon_msg "Stopping Mellanox x86 system bsp module"
+	log_daemon_msg "Unloading modules, used by Mellanox thermal control"
 	log_end_msg 0
 
-	COUNT=${#module_unload_list[@]}
-	for ((i=0; i<$COUNT; i++))
-	do
+	count=${#module_unload_list[@]}
+	for ((i=0; i<$count; i++)); do
 		unload_module ${module_unload_list[i]}
 	done
 
@@ -392,8 +382,7 @@ unload_modules()
 
 connect_platform()
 {
-	for ((i=0; i<$connect_size; i+=3))
-	do
+	for ((i=0; i<$connect_size; i+=3)); do
 		connect_device 	${connect_table[i]} ${connect_table[i+1]} \
 				${connect_table[i+2]}
         done
@@ -401,8 +390,7 @@ connect_platform()
 
 disconnect_platform()
 {
-	for ((i=0; i<$disconnect_size; i+=2))
-	do
+	for ((i=0; i<$disconnect_size; i+=2)); do
 		disconnect_device ${dis_table[i]} ${dis_table[i+1]}
 	done
 }
@@ -436,9 +424,7 @@ case $ACTION in
 		fi
 	;;
 	*)
-		echo
 		echo "Usage: `basename $0` {start|stop}"
-		echo
 		exit 1
 	;;
 esac

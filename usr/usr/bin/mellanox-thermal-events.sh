@@ -11,6 +11,11 @@
 # (at your option) any later version.
 #
 
+# This is udev triggers handler. It creates or destroys symbolic links to sysfs
+# entries according to the rules data and creates generic thermal model, which
+# doesn't depend on specific system topology. It allows thermal algorithm to
+# work in the same on different system over this system independent model.
+
 # Local variables
 thermal_path=/config/mellanox/thermal
 max_psus=2
@@ -35,16 +40,12 @@ if [ "$1" == "add" ]; then
 		fi
 	fi
 	if [ "$2" == "thermal_zone" ]; then
-		busfolder=`basename $3$4`
-		zonename=`echo $5`
 		zonetype=`cat $3$4/type`
 		if [ "$zonetype" == "mlxsw" ]; then
 			ln -sf $3$4/mode $thermal_path/thermal_zone_mode
 		fi
 	fi
 	if [ "$2" == "cooling_device" ]; then
-		busfolder=`basename $3$4`
-		coolingname=`echo $5`
 		coolingtype=`cat $3$4/type`
 		if [ "$coolingtype" == "Fan" ]; then
 			ln -sf $3$4/cur_state $thermal_path/cooling_cur_state
@@ -84,8 +85,6 @@ else
 		fi
 	fi
 	if [ "$2" == "thermal_zone" ]; then
-		busfolder=`basename $3$4`
-		zonename=`echo $5`
 		zonetype=`cat $3$4/type`
 		if [ "$zonetype" == "mlxsw" ]; then
 			unlink $thermal_path/thermal_zone_mode
@@ -93,8 +92,6 @@ else
 	fi
 
 	if [ "$2" == "cooling_device" ]; then
-		busfolder=`basename $3$4`
-		coolingname=`echo $5`
 		coolingtype=`cat $3$4/type`
 		if [ "$coolingtype" == "Fan" ]; then
 			unlink $thermal_path/cooling_cur_state

@@ -41,7 +41,7 @@ temp1_input_port_amb=$thermal_path/port_amb
 pwm1=$thermal_path/pwm1
 psu1_present=$thermal_path/psu1
 psu2_present=$thermal_path/psu2
-tz_mode=$thermal_path/mode
+tz_mode=$thermal_path/thermal_zone_mode
 cooling_cur_state=$thermal_path/cooling_cur_state
 
 # Input parameters for the system thermal class, the number of tachometers, the
