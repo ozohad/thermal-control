@@ -41,6 +41,8 @@ max_psus=2
 max_tachos=12
 i2c_bus_max=10
 i2c_bus_offset=0
+skip_mlxsw_i2c=0
+mlxsw_bus=2
 thermal_path=/config/mellanox/thermal
 
 # Topology description and driver specification for ambient sensors and for
@@ -292,6 +294,7 @@ load_module()
 				# algorithm will be performed by PCI based
 				# mlxsw module.
 				if [ -d /sys/module/mlxsw_pci ]; then
+					skip_mlxsw_i2c=1
 					return
 				fi
 			fi
@@ -334,6 +337,9 @@ unload_module()
 connect_device()
 {
 	if [ -f /sys/bus/i2c/devices/i2c-$3/new_device ]; then
+		if [ $skip_mlxsw_i2c -eq 1 ] && [ $3 -eq $mlxsw_bus ]; then
+			return 0
+		fi
 		addr=`echo $2 | tail -c +3`
 		bus=$(($3+$i2c_bus_offset))
 		if [ ! -d /sys/bus/i2c/devices/$bus-00$addr ] &&
