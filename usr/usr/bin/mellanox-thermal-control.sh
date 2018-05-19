@@ -37,10 +37,10 @@ thermal_path=/config/mellanox/thermal
 temp1_input_port=$thermal_path/temp1_input_port
 temp1_fault_port=$thermal_path/temp1_fault_port
 temp1_input_fan_amb=$thermal_path/fan_amb
-temp1_input_port_amb=$thermal_path/port_amb
+temp1_input_prt_amb=$thermal_path/port_amb
 pwm1=$thermal_path/pwm1
-psu1_present=$thermal_path/psu1
-psu2_present=$thermal_path/psu2
+psu1_status=$thermal_path/psu1_status
+psu2_status=$thermal_path/psu2_status
 tz_mode=$thermal_path/thermal_zone_mode
 cooling_cur_state=$thermal_path/cooling_cur_state
 
@@ -148,6 +148,13 @@ unk_dir_untrust_t2=(15000 12 25000 13 30000 14 35000 15 40000 16)
 # 35-40		30	40	30	70	30	70
 # 40-45		30	50	30	70	30	70
 
+p2c_dir_trust_t3=(45000 13)
+p2c_dir_untrust_t3=(35000 13 40000 14 45000 15)
+c2p_dir_trust_t3=(45000 13)
+c2p_dir_untrust_t3=(15000 13 30000 14 35000 15 40000 17)
+unk_dir_trust_t3=(45000 13)
+unk_dir_untrust_t3=(15000 13 30000 14 35000 15 40000 17)
+
 # Class t4 for MSN201* (Boxer)
 # Direction	P2C		C2P		Unknown
 #--------------------------------------------------------------
@@ -165,6 +172,13 @@ unk_dir_untrust_t2=(15000 12 25000 13 30000 14 35000 15 40000 16)
 # 35-40		20	60	20	60	20	60
 # 40-45		20	60	20	60	20	60
 
+p2c_dir_trust_t4=(45000 12)
+p2c_dir_untrust_t4=(10000 12 15000 13 20000 14 30000 15 35000 16)
+c2p_dir_trust_t4=(45000 12)
+c2p_dir_untrust_t4=(15000 12 20000 13 25000 14 30000 15 35000 16)
+unk_dir_trust_t4=(45000 12)
+unk_dir_untrust_t4=(10000 12 15000 13 20000 14 30000 15 35000 16)
+
 # Local constants
 pwm_noact=0
 pwm_max=1
@@ -179,6 +193,35 @@ p2c_dir=0
 cp2_dir=0
 unk_dir=0
 ambient=0
+
+validate_thermal_configuration()
+{
+	# Validate FAN fault symbolic links.
+	for ((i=1; i<=$max_tachos; i+=1)); do
+		if [ ! -L $thermal_path/fan"$i"_fault ]; then
+			log_failure_msg "FAN fault status attributes are not exist"
+			exit 1
+		fi
+	done
+	if [ ! -L $cooling_cur_state ] || [ ! -L $tz_mode ]; then
+		log_failure_msg "Thermal zone attributes are not exist"
+		exit 1
+	fi
+	if [ ! -L $pwm1 ]; then
+		log_failure_msg "PWM control attribute is not exist"
+		exit 1
+	fi
+	if [ ! -L $temp1_input_fan_amb ] || [ ! -L $temp1_input_prt_amb ]; then
+		log_failure_msg "Ambient temperate sensors attributes are not exist"
+		exit 1
+	fi
+	if [ $max_psus -gt 0 ]; then
+		if [ ! -L $psu1_status ] || [ ! -L $psu2_status ]; then
+			log_failure_msg "PS units status attributes are not exist"
+			exit 1
+		fi
+	fi
+}
 
 config_p2c_dir_trust()
 {
@@ -255,12 +298,16 @@ config_thermal_zones_asic()
 get_psu_presence()
 {
 	for ((i=1; i<=$max_psus; i+=1)); do
-		if [ -f $thermal_path/psu"$i"_present ]; then
-			present=`cat $psu"$i"_present`
+		if [ -f $thermal_path/psu"$i"_status ]; then
+			present=`cat $thermal_path/psu"$i"_status`
 			if [ $present -eq 0 ]; then
 				pwm_required_act=$pwm_max
-				echo disabled > $tz_mode
-				echo $pwm_max_rpm > $pwm1
+				# Disable thermal zone if was enabled.
+				if [ "$tz_mode" == "enabled" ]; then
+					echo disabled > $tz_mode
+					echo $pwm_max_rpm > $pwm1
+					log_action_msg "Thermal zone is disabled due to PS unit absence"
+				fi
 				return
 			fi
 		fi
@@ -276,8 +323,12 @@ get_fan_faults()
 			fault=`cat $thermal_path/fan"$i"_fault`
 			if [ $fault -eq 1 ]; then
 				pwm_required_act=$pwm_max
-				echo disabled > $tz_mode
-				echo $pwm_max_rpm > $pwm1
+				# Disable thermal zone if was enabled.
+				if [ "$tz_mode" == "enabled" ]; then
+					echo disabled > $tz_mode
+					echo $pwm_max_rpm > $pwm1
+					log_action_msg "Thermal zone is disabled due to FAN fault"
+				fi
 				return
 			fi
 		fi
@@ -302,7 +353,7 @@ set_pwm_min_threshold()
 
 	# Define FAN direction
 	temp1_fan_ambient=`cat $temp1_input_fan_amb`
-	temp1_port_ambient=`cat $temp1_input_port_amb`
+	temp1_port_ambient=`cat $temp1_input_prt_amb`
 	if [ $temp1_fan_ambient -gt  $temp1_port_ambient ]; then
 		ambient=$temp1_port_ambient
 		p2c_dir=1
@@ -396,6 +447,24 @@ case $system_thermal_type in
 		config_unk_dir_trust "${unk_dir_trust_t2[@]}"
 		config_unk_dir_untrust "${unk_dir_untrust_t2[@]}"
 		;;
+	3)
+		# Config FAN minimal speed setting for class t3
+		config_p2c_dir_trust "${p2c_dir_trust_t3[@]}"
+		config_p2c_dir_untrust "${p2c_dir_untrust_t3[@]}"
+		config_c2p_dir_trust "${c2p_dir_trust_t3[@]}"
+		config_c2p_dir_untrust "${c2p_dir_untrust_t3[@]}"
+		config_unk_dir_trust "${unk_dir_trust_t3[@]}"
+		config_unk_dir_untrust "${unk_dir_untrust_t3[@]}"
+		;;
+	4)
+		# Config FAN minimal speed setting for class t4
+		config_p2c_dir_trust "${p2c_dir_trust_t4[@]}"
+		config_p2c_dir_untrust "${p2c_dir_untrust_t4[@]}"
+		config_c2p_dir_trust "${c2p_dir_trust_t4[@]}"
+		config_c2p_dir_untrust "${c2p_dir_untrust_t4[@]}"
+		config_unk_dir_trust "${unk_dir_trust_t4[@]}"
+		config_unk_dir_untrust "${unk_dir_untrust_t4[@]}"
+		;;
 	*)
 		echo thermal type $system_thermal_type is not supported
 		exit 0
@@ -408,7 +477,7 @@ thermal_control_exit()
 		rm -rf /var/run/mellanox-thermal.pid
 	fi
 
-	echo "Mellanox thermal control is terminated (PID=$thermal_control_pid)"
+	log_end_msg "Mellanox thermal control is terminated (PID=$thermal_control_pid)."
 	exit 1
 }
 
@@ -418,21 +487,24 @@ thermal_control_exit()
 # SIGTERM	15	Termination signal.
 trap 'thermal_control_exit' 2 9 15
 
-# Initialization during start up
+# Initialization during start up.
 thermal_control_pid=$$
 if [ -f /var/run/mellanox-thermal.pid ]; then
 	zone1=`cat /var/run/mellanox-thermal.pid`
 	# Only one instance of thermal control could be activated
 	if [ -d /proc/$zone1 ]; then
-		echo Mellanox thermal control is already running
+		log_warning_msg "Mellanox thermal control is already running."
 		exit 0
 	fi
 fi
 
-echo $thermal_control_pid > /var/run/mellanox-thermal.pid
-echo "Mellanox thermal control is started (PID=$thermal_control_pid)"
+# Validate thermal configuration.
+validate_thermal_configuration
 
-# Start thermal monitoring 
+echo $thermal_control_pid > /var/run/mellanox-thermal.pid
+log_progress_msg "Mellanox thermal control is started (PID=$thermal_control_pid)"
+
+# Start thermal monitoring.
 while true
 do
     	/bin/sleep $polling_time
@@ -451,6 +523,7 @@ do
 	# Enable thermal zone if it has been disabled before.
 	if [ "$tz_mode" == "disabled" ]; then
 		echo enabled > $tz_mode
+		log_action_msg "Thermal zone is re-enabled"
 	fi
 	# Set dynamic FAN speed minimum, depending on ambient temperature,
 	# presence of untrusted optical cables or presence of any cables
@@ -460,6 +533,11 @@ do
 	# since the last time.
 	if [ $fan_dynamic_min -ne $fan_dynamic_min_last ]; then
 		echo fan_dynamic_min > $cooling_cur_state
+		fan_from=$(($fan_dynamic_min_last-10))
+		fan_from=$(($fan_from*10))
+		fan_to=$(($fan_dynamic_min-10))
+		fan_to=$(($fan_to*10))
+		log_action_msg "FAN minimum speed is changed from $fan_from to $fan_to percent"
 		fan_dynamic_min_last=$fan_dynamic_min
 	fi
 done
