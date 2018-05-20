@@ -306,8 +306,9 @@ get_psu_presence()
 			present=`cat $thermal_path/psu"$i"_status`
 			if [ $present -eq 0 ]; then
 				pwm_required_act=$pwm_max
+				mode=`cat $tz_mode`
 				# Disable thermal zone if was enabled.
-				if [ "$tz_mode" == "enabled" ]; then
+				if [ $mode == "enabled" ]; then
 					echo disabled > $tz_mode
 					echo $pwm_max_rpm > $pwm
 					log_action_msg "Thermal zone is disabled due to PS unit absence"
