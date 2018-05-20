@@ -43,6 +43,8 @@ if [ "$1" == "add" ]; then
 		zonetype=`cat $3$4/type`
 		if [ "$zonetype" == "mlxsw" ]; then
 			ln -sf $3$4/mode $thermal_path/thermal_zone_mode
+			ln -sf $3$4/trip_point_0_temp $thermal_path/temp_trip_min
+			ln -sf $3$4/temp $thermal_path/thermal_zone_temp
 		fi
 	fi
 	if [ "$2" == "cooling_device" ]; then
@@ -97,6 +99,8 @@ else
 		zonetype=`cat $3$4/type`
 		if [ "$zonetype" == "mlxsw" ]; then
 			unlink $thermal_path/thermal_zone_mode
+			unlink $thermal_path/temp_trip_min
+			unlink $thermal_path/thermal_zone_temp
 		fi
 	fi
 

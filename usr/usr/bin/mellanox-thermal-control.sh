@@ -34,14 +34,16 @@
 
 # Paths to thermal sensors, device present states, thermal zone and cooling device
 thermal_path=/config/mellanox/thermal
-temp1_input_port=$thermal_path/temp1_input_port
-temp1_fault_port=$thermal_path/temp1_fault_port
-temp1_input_fan_amb=$thermal_path/fan_amb
-temp1_input_prt_amb=$thermal_path/port_amb
-pwm1=$thermal_path/pwm1
+temp_port=$thermal_path/temp1_input_port
+temp_port_fault=$thermal_path/temp1_fault_port
+temp_fan_amb=$thermal_path/fan_amb
+temp_port_amb=$thermal_path/port_amb
+pwm=$thermal_path/pwm1
 psu1_status=$thermal_path/psu1_status
 psu2_status=$thermal_path/psu2_status
 tz_mode=$thermal_path/thermal_zone_mode
+temp_trip_min=$thermal_path/temp_trip_min
+tz_temp=$thermal_path/thermal_zone_temp
 cooling_cur_state=$thermal_path/cooling_cur_state
 
 # Input parameters for the system thermal class, the number of tachometers, the
@@ -203,15 +205,16 @@ validate_thermal_configuration()
 			exit 1
 		fi
 	done
-	if [ ! -L $cooling_cur_state ] || [ ! -L $tz_mode ]; then
+	if [ ! -L $cooling_cur_state ] || [ ! -L $tz_mode  ] ||
+	   [ ! -L $temp_trip_min ] || [ ! -L $tz_temp ]; then
 		log_failure_msg "Thermal zone attributes are not exist"
 		exit 1
 	fi
-	if [ ! -L $pwm1 ]; then
+	if [ ! -L $pwm ]; then
 		log_failure_msg "PWM control attribute is not exist"
 		exit 1
 	fi
-	if [ ! -L $temp1_input_fan_amb ] || [ ! -L $temp1_input_prt_amb ]; then
+	if [ ! -L $temp_fan_amb ] || [ ! -L $temp_port_amb ]; then
 		log_failure_msg "Ambient temperate sensors attributes are not exist"
 		exit 1
 	fi
@@ -305,7 +308,7 @@ get_psu_presence()
 				# Disable thermal zone if was enabled.
 				if [ "$tz_mode" == "enabled" ]; then
 					echo disabled > $tz_mode
-					echo $pwm_max_rpm > $pwm1
+					echo $pwm_max_rpm > $pwm
 					log_action_msg "Thermal zone is disabled due to PS unit absence"
 				fi
 				return
@@ -326,7 +329,7 @@ get_fan_faults()
 				# Disable thermal zone if was enabled.
 				if [ "$tz_mode" == "enabled" ]; then
 					echo disabled > $tz_mode
-					echo $pwm_max_rpm > $pwm1
+					echo $pwm_max_rpm > $pwm
 					log_action_msg "Thermal zone is disabled due to FAN fault"
 				fi
 				return
@@ -346,14 +349,14 @@ set_pwm_min_threshold()
 	unk_dir=0
 
 	# Check for untrusted modules
-	temp1_fault=`cat $temp1_fault_port`
+	temp1_fault=`cat $temp_port_fault`
 	if [ $temp1_fault -eq 1 ]; then
 		untrusted_sensor=1
 	fi
 
 	# Define FAN direction
-	temp1_fan_ambient=`cat $temp1_input_fan_amb`
-	temp1_port_ambient=`cat $temp1_input_prt_amb`
+	temp1_fan_ambient=`cat $temp_fan_amb`
+	temp1_port_ambient=`cat $temp_port_amb`
 	if [ $temp1_fan_ambient -gt  $temp1_port_ambient ]; then
 		ambient=$temp1_port_ambient
 		p2c_dir=1
@@ -484,6 +487,15 @@ thermal_control_exit()
 # Handle events sent by command kill -USR1 to /var/run/mellanox-thermal.pid.
 thermal_control_event()
 {
+	# The received event notifies about fast temperature decreasing. It
+	# could happen in case one or few very hot port cables have been
+	# removed. In this situation temperature trend, handled by the kernel
+	# thermal algorithm could go down once, and then could stay in stable
+	# state, while PWM state will be decreased only once. As a side effect
+	# PWM will be in not optimal. Set PWM speed to dynamic speed minimum
+	# value and give to kernel thermal algorithm can stabilize PWM speed
+	# if necessary.
+
 	log_action_msg "Mellanox thermal control received event."
 }
 
