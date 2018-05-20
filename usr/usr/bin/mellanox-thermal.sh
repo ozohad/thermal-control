@@ -227,7 +227,7 @@ check_system()
 				qmb7xxx_sn37x_sn34x_specific
 				;;
 			*)
-				echo $product is not supported
+				log_failure_msg "$product is not supported"
 				exit 0
 				;;
 		esac
@@ -251,7 +251,7 @@ check_system()
 				qmb7xxx_sn37x_sn34x_specific
 				;;
 			*)
-				echo $manufacturer is not Mellanox
+				log_failure_msg "$manufacturer is not Mellanox"
 				exit 0
 		esac
 	fi
@@ -275,7 +275,7 @@ find_i2c_bus()
 		fi
 	done
 
-	echo i2c-mlxcpld driver is not loaded
+	log_failure_msg "i2c-mlxcpld driver is not loaded"
 	exit 0
 }
 
@@ -367,7 +367,7 @@ disconnect_device()
 
 load_modules()
 {
-	log_daemon_msg "Loading modukes, used by Mellanox thermal control"
+	log_daemon_msg "Loading modules, used by Mellanox thermal control"
 	log_end_msg 0
 
 	count=${#module_load_path[@]}
