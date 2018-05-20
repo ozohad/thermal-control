@@ -188,6 +188,7 @@ pwm_max_rpm=255
 
 # Local variables
 pwm_required=$pwm_noact
+fan_max_state=10
 fan_dynamic_min=12
 fan_dynamic_min_last=12
 untrusted_sensor=0
@@ -355,16 +356,16 @@ set_pwm_min_threshold()
 	fi
 
 	# Define FAN direction
-	temp1_fan_ambient=`cat $temp_fan_amb`
-	temp1_port_ambient=`cat $temp_port_amb`
-	if [ $temp1_fan_ambient -gt  $temp1_port_ambient ]; then
-		ambient=$temp1_port_ambient
+	temp_fan_ambient=`cat $temp_fan_amb`
+	temp_port_ambient=`cat $temp_port_amb`
+	if [ $temp_fan_ambient -gt  $temp_port_ambient ]; then
+		ambient=$temp_port_ambient
 		p2c_dir=1
-	elif [ $temp1_fan_ambient -lt  $temp1_port_ambient ]; then
-		ambient=$temp1_fan_ambient
+	elif [ $temp_fan_ambient -lt  $temp_port_ambient ]; then
+		ambient=$temp_fan_ambient
 		cp2_dir=1
 	else
-		ambient=$temp1_fan_ambient
+		ambient=$temp_fan_ambient
 		unk_dir=1
 	fi
 
@@ -495,8 +496,14 @@ thermal_control_event()
 	# PWM will be in not optimal. Set PWM speed to dynamic speed minimum
 	# value and give to kernel thermal algorithm can stabilize PWM speed
 	# if necessary.
-
-	log_action_msg "Mellanox thermal control received event."
+	trip_min=`cat $temp_trip_min`
+	temp_now=`cat $tz_temp`
+	if [ $trip_min -gt  $temp_now ]; then
+		set_cur_state=$(($fan_dynamic_min-$fan_max_state))
+		echo $set_cur_state > $cooling_cur_state
+		set_cur_state=$(($set_cur_state*10))
+		log_action_msg "FAN speed is set to $set_cur_state percent due to thermal zone event."
+	fi
 }
 
 # Handle the next POSIX signals by thermal_control_exit:
@@ -554,10 +561,10 @@ do
 	# Update cooling levels of FAN If dynamic minimum has been changed
 	# since the last time.
 	if [ $fan_dynamic_min -ne $fan_dynamic_min_last ]; then
-		echo fan_dynamic_min > $cooling_cur_state
-		fan_from=$(($fan_dynamic_min_last-10))
+		echo $fan_dynamic_min > $cooling_cur_state
+		fan_from=$(($fan_dynamic_min_last-$fan_max_state))
 		fan_from=$(($fan_from*10))
-		fan_to=$(($fan_dynamic_min-10))
+		fan_to=$(($fan_dynamic_min-$fan_max_state))
 		fan_to=$(($fan_to*10))
 		log_action_msg "FAN minimum speed is changed from $fan_from to $fan_to percent"
 		fan_dynamic_min_last=$fan_dynamic_min
