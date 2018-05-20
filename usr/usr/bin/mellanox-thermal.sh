@@ -409,10 +409,12 @@ disconnect_platform()
 case $ACTION in
         start)
 		check_system
-		find_i2c_bus
 		depmod -a 2>/dev/null
+		# Sleep to allow kernel modules initialization completion.
 		load_modules
-		sleep 1
+		# Sleep to allow kernel modules initialization completion
+		sleep 3
+		find_i2c_bus
 		connect_platform
 		mellanox-thermal-control.sh $thermal_type $mac_tachos $max_psus &
 	;;

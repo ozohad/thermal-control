@@ -129,9 +129,8 @@ journalctl --unit=mellanox-thermal
 Once "systemctl enable mellanox-thermal" is invoked, the thermal control will
 be automatically activated after the next and the following system reboots,
 until "systemctl disable mellanox-thermal" is not invoked.
-Application could be stopped and started by the following commands:
+Application could be stopped by the following commands:
 systemctl stop mellanox-thermal.service
-systemctl start mellanox-thermal
 
 ## Authors
 
