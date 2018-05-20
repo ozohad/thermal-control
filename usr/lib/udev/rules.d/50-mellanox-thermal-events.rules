@@ -54,7 +54,8 @@ SUBSYSTEM=="thermal", KERNEL=="cooling_device*", ACTION=="remove", RUN+="/usr/bi
 
 # Thermal zone.
 SUBSYSTEM=="thermal", KERNEL=="thermal_zone*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add thermal_zone %S %p %k"
-SUBSYSTEM=="thermal", KERNEL=="thermal_zone*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm thermal_zone %S %p %k
+SUBSYSTEM=="thermal", KERNEL=="thermal_zone*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm thermal_zone %S %p %k"
+SUBSYSTEM=="thermal", KERNEL=="thermal_zone*", ACTION=="change", RUN+="/usr/bin/mellanox-thermal-events.sh change thermal_zone %S %p %k"
 
 # Hotplug devices statuses.
 SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/mlxplat/mlxreg-hotplug/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add hotplug %S %p"

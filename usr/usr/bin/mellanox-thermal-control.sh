@@ -481,11 +481,21 @@ thermal_control_exit()
 	exit 1
 }
 
+# Handle events sent by command kill -USR1 to /var/run/mellanox-thermal.pid.
+thermal_control_event()
+{
+	log_action_msg "Mellanox thermal control received event."
+}
+
 # Handle the next POSIX signals by thermal_control_exit:
 # SIGINT	2	Terminal interrupt signal.
 # SIGKILL	9	Kill (cannot be caught or ignored).
 # SIGTERM	15	Termination signal.
-trap 'thermal_control_exit' 2 9 15
+trap 'thermal_control_exit' INT KILL TERM
+
+# Handle the next POSIX signal by thermal_control_event:
+# SIGUSR1	10	User-defined signal 1.
+trap 'thermal_control_event' USR1
 
 # Initialization during start up.
 thermal_control_pid=$$
@@ -502,7 +512,7 @@ fi
 validate_thermal_configuration
 
 echo $thermal_control_pid > /var/run/mellanox-thermal.pid
-log_progress_msg "Mellanox thermal control is started (PID=$thermal_control_pid)"
+log_progress_msg "Mellanox thermal control is started"
 
 # Start thermal monitoring.
 while true

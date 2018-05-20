@@ -121,8 +121,10 @@ and de-initialization of mellanox-thermal:
 systemctl enable mellanox-thermal
 systemctl disable mellanox-thermal
 Running status of mellanox-thermal unit can be obtained by the following
-commands:
+command:
 systemctl status mellanox-thermal
+Logging records of the thermal control written by systemd-journald.service can
+be queried by the following command:
 journalctl --unit=mellanox-thermal
 Once "systemctl enable mellanox-thermal" is invoked, the thermal control will
 be automatically activated after the next and the following system reboots,

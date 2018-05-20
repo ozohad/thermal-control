@@ -64,7 +64,16 @@ if [ "$1" == "add" ]; then
 		done
   	fi
 elif [ "$1" == "change" ]; then
-	echo "Do nothing on change"
+	if [ "$2" == "thermal_zone" ]; then
+		zonetype=`cat $3$4/type`
+		if [ "$zonetype" == "mlxsw" ]; then
+			# Notify thermal control about thermal zone change.
+			if [ -f /var/run/mellanox-thermal.pid ]; then
+				pid=`cat /var/run/mellanox-thermal.pid`
+				kill -USR1 $pid
+			fi
+		fi
+	fi
 else
 	if [ "$2" == "fan_amb" ] || [ "$2" == "port_amb" ]; then
 		unlink $thermal_path/$2
