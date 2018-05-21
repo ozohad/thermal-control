@@ -486,6 +486,29 @@ thermal_control_exit()
 	exit 1
 }
 
+check_trip_nin_vs_current_temp()
+{
+	trip_min=`cat $temp_trip_min`
+	temp_now=`cat $tz_temp`
+	if [ $trip_min -gt  $temp_now ]; then
+		set_cur_state=$(($fan_dynamic_min-$fan_max_state))
+		echo $set_cur_state > $cooling_cur_state
+		set_cur_state=$(($set_cur_state*10))
+		case $1 in
+		1)
+			log_action_msg "FAN speed is set to $set_cur_state percent due to thermal zone event."
+		;;
+		2)
+			log_action_msg "FAN speed is set to $set_cur_state percent due to system health recovery"
+		;;
+		*)
+			return
+		;;
+		esac
+		log_action_msg "FAN speed is set to $set_cur_state percent due to thermal zone event."
+	fi
+}
+
 # Handle events sent by command kill -USR1 to /var/run/mellanox-thermal.pid.
 thermal_control_event()
 {
@@ -497,14 +520,7 @@ thermal_control_event()
 	# PWM will be in not optimal. Set PWM speed to dynamic speed minimum
 	# value and give to kernel thermal algorithm can stabilize PWM speed
 	# if necessary.
-	trip_min=`cat $temp_trip_min`
-	temp_now=`cat $tz_temp`
-	if [ $trip_min -gt  $temp_now ]; then
-		set_cur_state=$(($fan_dynamic_min-$fan_max_state))
-		echo $set_cur_state > $cooling_cur_state
-		set_cur_state=$(($set_cur_state*10))
-		log_action_msg "FAN speed is set to $set_cur_state percent due to thermal zone event."
-	fi
+	check_trip_nin_vs_current_temp 1
 }
 
 # Handle the next POSIX signals by thermal_control_exit:
@@ -550,11 +566,6 @@ do
 	if [ $pwm_required_act -eq $pwm_max ]; then
 		continue
 	fi
-	# Enable thermal zone if it has been disabled before.
-	if [ "$tz_mode" == "disabled" ]; then
-		echo enabled > $tz_mode
-		log_action_msg "Thermal zone is re-enabled"
-	fi
 	# Set dynamic FAN speed minimum, depending on ambient temperature,
 	# presence of untrusted optical cables or presence of any cables
 	# with untrusted temperature sensing.
@@ -569,5 +580,14 @@ do
 		fan_to=$(($fan_to*10))
 		log_action_msg "FAN minimum speed is changed from $fan_from to $fan_to percent"
 		fan_dynamic_min_last=$fan_dynamic_min
+	fi
+	# Enable thermal zone if it has been disabled before.
+	if [ "$tz_mode" == "disabled" ]; then
+		echo enabled > $tz_mode
+		log_action_msg "Thermal zone is re-enabled"
+		# System health (PS units or FANs) has been recovered. Set PWM
+		# speed to dynamic speed minimum value and give to kernel
+		# thermal algorithm can stabilize PWM speed if necessary.
+		check_trip_nin_vs_current_temp 2
 	fi
 done

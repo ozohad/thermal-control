@@ -407,7 +407,7 @@ disconnect_platform()
 }
 
 case $ACTION in
-        start)
+	start)
 		check_system
 		depmod -a 2>/dev/null
 		# Sleep to allow kernel modules initialization completion.
@@ -418,7 +418,7 @@ case $ACTION in
 		connect_platform
 		mellanox-thermal-control.sh $thermal_type $mac_tachos $max_psus &
 	;;
-        stop)
+	stop)
 		# Kill thermal control if running.
 		if [ -f /var/run/mellanox-thermal.pid ]; then
 			thermal_control_pid=`cat /var/run/mellanox-thermal.pid`
