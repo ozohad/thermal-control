@@ -14,7 +14,8 @@ Supported systems:
 Description:
 The thermal monitoring is performed in kernel space. The thermal zone binds PWM
 control and the temperature measure, which is accumulated temperature from the
-ports and from the ASIC.
+ports and from the ASIC. Kernel algorithm uses step_wise policy. For details,
+please refer to kernel documentation file Documentation/thermal/sysfs-api.txt.
 
 This package provides additional functionally to the thermal control, which
 contains the following polices:
