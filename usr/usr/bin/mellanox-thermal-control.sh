@@ -193,7 +193,7 @@ fan_dynamic_min=12
 fan_dynamic_min_last=12
 untrusted_sensor=0
 p2c_dir=0
-cp2_dir=0
+c2p_dir=0
 unk_dir=0
 ambient=0
 
@@ -328,8 +328,9 @@ get_fan_faults()
 			fault=`cat $thermal_path/fan"$i"_fault`
 			if [ $fault -eq 1 ]; then
 				pwm_required_act=$pwm_max
+				mode=`cat $tz_mode`
 				# Disable thermal zone if was enabled.
-				if [ "$tz_mode" == "enabled" ]; then
+				if [ $mode == "enabled" ]; then
 					echo disabled > $tz_mode
 					echo $pwm_max_rpm > $pwm
 					log_action_msg "Thermal zone is disabled due to FAN fault"
@@ -347,7 +348,7 @@ set_pwm_min_threshold()
 	untrusted_sensor=0
 	ambient=0
 	p2c_dir=0
-	cp2_dir=0
+	c2p_dir=0
 	unk_dir=0
 
 	# Check for untrusted modules
@@ -364,7 +365,7 @@ set_pwm_min_threshold()
 		p2c_dir=1
 	elif [ $temp_fan_ambient -lt  $temp_port_ambient ]; then
 		ambient=$temp_fan_ambient
-		cp2_dir=1
+		c2p_dir=1
 	else
 		ambient=$temp_fan_ambient
 		unk_dir=1
@@ -582,7 +583,8 @@ do
 		fan_dynamic_min_last=$fan_dynamic_min
 	fi
 	# Enable thermal zone if it has been disabled before.
-	if [ "$tz_mode" == "disabled" ]; then
+	mode=`cat $tz_mode`
+	if [ $mode == "disabled" ]; then
 		echo enabled > $tz_mode
 		log_action_msg "Thermal zone is re-enabled"
 		# System health (PS units or FANs) has been recovered. Set PWM
