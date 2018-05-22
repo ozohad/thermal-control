@@ -416,7 +416,7 @@ case $ACTION in
 		sleep 3
 		find_i2c_bus
 		connect_platform
-		mellanox-thermal-control.sh $thermal_type $mac_tachos $max_psus &
+		mellanox-thermal-control.sh $thermal_type $max_tachos $max_psus &
 	;;
 	stop)
 		# Kill thermal control if running.
