@@ -14,8 +14,23 @@ Supported systems:
 Description:
 The thermal monitoring is performed in kernel space. The thermal zone binds PWM
 control and the temperature measure, which is accumulated temperature from the
-ports and from the ASIC. Kernel algorithm uses step_wise policy. For details,
+ports and from the ASIC. Kernel algorithm uses step wise policy. For details,
 please refer to kernel documentation file Documentation/thermal/sysfs-api.txt.
+Existing kernel thermal framework provides:
+Concepts of thermal zones, trip points, cooling devices, thermal instances,
+thermal governors:
+ - Cooling device is an actual functional unit for cooling down the thermal
+   zone: Fan.
+ - Thermal instance describes how cooling devices work at certain trip point in
+   the thermal zone.
+ - Governor handles the thermal instance not thermal devices.
+   Step wise governor sets cooling state based on thermal trend (STABLE, RAISING,
+   DROPPING, RASING_FULL, DROPPING_FULL). It allows only one step change for
+   increasing or decreasing at decision time.
+Framework to register thermal zone and cooling devices:
+  - Thermal zone devices and cooling devices will work after proper binding.
+Performs a routing function of generic cooling devices to generic thermal zones
+with the help of very simple thermal management logic.
 
 This package provides additional functionally to the thermal control, which
 contains the following polices:
