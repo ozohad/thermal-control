@@ -20,6 +20,8 @@
 thermal_path=/config/mellanox/thermal
 max_psus=2
 max_tachos=12
+fan_command=0x3b
+fan_psu_default=0x3c
 
 if [ "$1" == "add" ]; then
 	if [ "$2" == "fan_amb" ] || [ "$2" == "port_amb" ]; then
@@ -28,6 +30,7 @@ if [ "$1" == "add" ]; then
 	if [ "$2" == "switch" ]; then
 		name=`cat $3$4/name`
 		if [ "$name" == "mlxsw" ]; then
+			ln -sf $3$4/temp1_input $thermal_path/temp1_input_asic
 			ln -sf $3$4/pwm1 $thermal_path/pwm1
 			for ((i=1; i<=$max_tachos; i+=1)); do
 				if [ -f $3$4/fan"$i"_fault ]; then
@@ -65,6 +68,17 @@ if [ "$1" == "add" ]; then
 			fi
 		done
   	fi
+	if [ "$2" == "psu1" ] || [ "$2" == "psu2" ]; then
+		# PSU unit FAN speed set
+		busdir=`echo $5$3 |xargs dirname |xargs dirname`
+		busfolder=`basename $busdir`
+		bus="${busfolder:0:${#busfolder}-5}"
+		if [ "$2" == "psu1" ]; then
+			i2cset -f -y $bus 0x59 $fan_command $fan_psu_default wp
+		else
+			i2cset -f -y $bus 0x58 $fan_command $fan_psu_default wp
+		fi
+	fi
 elif [ "$1" == "change" ]; then
 	if [ "$2" == "thermal_zone" ]; then
 		zonetype=`cat $3$4/type`
@@ -83,6 +97,7 @@ else
 	if [ "$2" == "switch" ]; then
 		name=`cat $3$4/name`
 		if [ "$name" == "mlxsw" ]; then
+			unlink $thermal_path/temp1_input_asic
 			unlink $thermal_path/pwm1
 			for ((i=1; i<=$max_tachos; i+=1)); do
 				if [ -L $thermal_path/fan"$i"_fault ]; then

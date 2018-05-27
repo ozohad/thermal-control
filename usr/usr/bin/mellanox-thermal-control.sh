@@ -38,6 +38,7 @@ temp_port=$thermal_path/temp1_input_port
 temp_port_fault=$thermal_path/temp1_fault_port
 temp_fan_amb=$thermal_path/fan_amb
 temp_port_amb=$thermal_path/port_amb
+temp_asic=$thermal_path/temp1_input_asic
 pwm=$thermal_path/pwm1
 psu1_status=$thermal_path/psu1_status
 psu2_status=$thermal_path/psu2_status
@@ -211,8 +212,12 @@ validate_thermal_configuration()
 		log_failure_msg "Thermal zone attributes are not exist"
 		exit 1
 	fi
-	if [ ! -L $pwm ]; then
-		log_failure_msg "PWM control attribute is not exist"
+	if [ ! -L $pwm ] || [ ! -L $temp_asic ]; then
+		log_failure_msg "PWM control and ASIC attributes are not exist"
+		exit 1
+	fi
+	if [ ! -L $temp_port ] || [ ! -L $temp_port_fault ]; then
+		log_failure_msg "Port attributes are not exist"
 		exit 1
 	fi
 	if [ ! -L $temp_fan_amb ] || [ ! -L $temp_port_amb ]; then
@@ -225,6 +230,20 @@ validate_thermal_configuration()
 			exit 1
 		fi
 	fi
+}
+
+thermal_periodic_report()
+{
+	f1=`cat $temp_port`
+	f2=`cat $temp_asic`
+	f3=`cat $tz_temp`
+	f4=`cat $temp_fan_amb`
+	f5=`cat $temp_port_amb`
+	f6=`cat $pwm`
+	f7=`cat $temp_port_fault`
+	log_progess_msg "Temperature: port $f1 asic $f2 tz $f3"
+	log_progess_msg "fan amb $f4 port amb $f5"
+	log_progess_msg "Cooling: pwm $f6 port fault $f7 dynaimc_min $fan_dynamic_min"
 }
 
 config_p2c_dir_trust()

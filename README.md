@@ -36,16 +36,38 @@ This package provides additional functionally to the thermal control, which
 contains the following polices:
 - Setting PWM to full speed if one of PS units is not present (in such case
   thermal monitoring in kernel is set to disabled state until the problem is
-  not recovered).
+  not recovered). Such events will be reported to systemd journaling system. 
 - Setting PWM to full speed if one of FAN drawers is not present or one of
   tachometers is broken present (in such case thermal monitoring in kernel is
-  set to disabled state until the problem is not recovered).
+  set to disabled state until the problem is not recovered). Such events will
+  be reported to systemd journaling system.
 - Setting PWM dynamic speed minimum. The dynamic setting depends on FAN
   direction and cable type. For system with copper cables only or/and with
   trusted optic cable minimum PWM setting could be decreased according to the
-  system definition.
+  system definition. Such events will be reported to systemd journaling system.
 
-Thermal tables for the minimum FAN setting per are defined per system type and
+The thermal zones are defined with the following trip points:
+State		Temperature value	PWM speed	Action
+Cold:		t < 75 Celsius		20% *		Do nothing
+In range	75 <= t < 85 Celsius	20%-40% *	Keep minimal speed
+Hot:		85 <= t < 105		40%-100% *	Perform hot algorithm
+Hot alarm:	105 <= t < 110 Celsius	100%		Produce warning message
+Critical: 	t >= 110 Celsius	100%		System shutdown
+
+* Note:
+The above table defines default minimum FAN speed per each thermal zone. This
+setting can be reset in case the dynamical minimum speed is changed. The
+cooling device bound to the thermal zone operates over the ten cooling logical
+levels. The default vector for the cooling levels is defined with the next PWM
+per level speeds:
+20%	20%	30%	40%	50%	60%	70%	80%	90%	100%
+In case system dynamical minimum is changed for example from 20% to 60%, the
+cooling level vector will be dynamically updated as below:
+60%	60%	60%	60%	60%	60%	70%	80%	90%	100%
+In such way the allowed PWM minimum is limited according to the system thermal
+requirements.
+
+Thermal tables for the minimum FAN setting are defined per system type and
 contains entries with ambient temperature threshold values and relevant minimum
 speed setting. All Mellanox system are equipped with two ambient sensors:
 port side ambient sensor and FAN side ambient sensor. FAN direction can
@@ -83,10 +105,78 @@ Package contains the following files, used within the workload:
 	destroys symbolic links to sysfs entries. It allows to create system
 	independent entries and it allows thermal controls to work over this
 	system independent model.
+	Raises signal to mellanox-thermal-control in case of fast temperature
+	decreasing. It could happen in case one or few very hot port cables
+	have been removed.
+	Sets PS units internal FAN speed to default value when unit is
+	connected to power source.
 /usr/bin/mellanox-thermal.sh
 	performs initialization and de-initialization, detects the system type,
 	connects thermal drivers according to the system topology, activates
 	and deactivates thermal algorithm.
+
+SYSFS attributes:
+The thermal control operates over sysfs attributes. These attributes are
+exposed as symbolic links to /config/mellanox/thermal folder. These folder
+contains the next files (which are symbolic links):
+cooling_cur_state	Current cooling state, exposed by cooling level (1..10)
+fan<i>_fault		tachometer fault, <i> 1..max tachometers number
+psu1_status		PS unit 1 presence status (1 - present, 0 - removed)
+psu2_status		PS unit 2 presence status (1 - present, 0 - removed)
+pwm			PWM speed exposed in RPM
+temp_asic		ASIC ambient temperature value
+temp_fan_amb		FAN side ambient temperature value
+temp_port_amb		port side ambient temperature value
+temp_port		port temperature value
+temp_port_fault		port temperature fault
+temp_trip_min		thermal zone minimum temperature trip
+tz_mode			thermal zone mode (enabled or disabled)
+tz_temp			thermal zone temperature
+
+Kernel configuration required the next setting (kernel version should be v4.19
+or later):
+CONFIG_NET_VENDOR_MELLANOX
+CONFIG_MELLANOX_PLATFORM
+CONFIG_NET_DEVLINK
+CONFIG_MAY_USE_DEVLINK
+CONFIG_I2C
+CONFIG_I2C_BOARDINFO
+CONFIG_I2C_CHARDEV
+CONFIG_I2C_MUX
+CONFIG_I2C_MUX_REG
+CONFIG_REGMAP
+CONFIG_SYSFS
+CONFIG_MLXSW_CORE
+CONFIG_MLXSW_CORE_HWMON
+CONFIG_MLXSW_CORE_THERMAL
+CONFIG_MLXSW_PCI or/and CONFIG_MLXSW_I2C
+CONFIG_MLXSW_SPECTRUM or/and CONFIG_MLXSW_MINIMAL
+CONFIG_I2C_MLXCPLD
+CONFIG_LEDS_MLXREG
+CONFIG_MLX_PLATFORM
+CONFIG_MLXREG_HOTPLUG
+CONFIG_THERMAL
+CONFIG_THERMAL_HWMON
+CONFIG_THERMAL_WRITABLE_TRIPS
+CONFIG_THERMAL_DEFAULT_GOV_STEP_WISE=y
+CONFIG_THERMAL_GOV_STEP_WISE
+CONFIG_PMBUS
+CONFIG_SENSORS_PMBUS
+CONFIG_HWMON
+CONFIG_THERMAL_HWMON
+CONFIG_SENSORS_LM75
+CONFIG_SENSORS_TMP102
+CONFIG_LEDS_MLXREG
+CONFIG_LEDS_TRIGGERS
+CONFIG_LEDS_TRIGGER_TIMER
+CONFIG_NEW_LEDS
+CONFIG_LEDS_CLASS
+
+The package depends on the next packages:
+init-system-helpers:	helper tools for all init systems
+lsb-base:		Linux Standard Base init script functionality
+udev:			/dev/ and hotplug management daemon
+i2c-tools:		heterogeneous set of I2C tools for Linux
 
 Package contains the folder debian, with the rules for Debian package build.
 

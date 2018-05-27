@@ -55,11 +55,12 @@ thermal_path=/config/mellanox/thermal
 # Hardware monitoring related drivers for ambient temperature sensing will be
 # loaded in case they were not loaded before or in case these drivers are not
 # configured as modules.
-module_load_path=(	hwmon/lm75.ko \
+module_load_path=(	i2c/i2c-dev.ko \	
+			hwmon/lm75.ko \
 			hwmon/tmp102.ko \
 			net/ethernet/mellanox/mlxsw/mlxsw_minimal.ko)
 
-module_unload_list=(	tmp102 lm75 mlxsw_minimal)
+module_unload_list=(	tmp102 lm75 mlxsw_minimal i2c_dev)
 
 msn2700_connect_table=(	mlxsw_minimal 0x48 2 \
 			lm75 0x4a 7 \
