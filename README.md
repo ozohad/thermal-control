@@ -54,6 +54,9 @@ The thermal zones are defined with the following trip points:
 - Hot alarm:	105 <= t < 110 Celsius	100%		Produce warning message
 - Critical: 	t >= 110 Celsius	100%		System shutdown
 
+- All the above trip points, excepted last one, are defined with 5 Celsius
+  hysteresis trip.
+
 * Note:
 The above table defines default minimum FAN speed per each thermal zone. This
 setting can be reset in case the dynamical minimum speed is changed. The
@@ -61,10 +64,10 @@ cooling device bound to the thermal zone operates over the ten cooling logical
 levels. The default vector for the cooling levels is defined with the next PWM
 per level speeds:
 - 20%	20%	30%	40%	50%	60%	70%	80%	90%	100%
-  In case system dynamical minimum is changed for example from 20% to 60%, the
+- In case system dynamical minimum is changed for example from 20% to 60%, the
   cooling level vector will be dynamically updated as below:
 - 60%	60%	60%	60%	60%	60%	70%	80%	90%	100%
-  In such way the allowed PWM minimum is limited according to the system
+- In such way the allowed PWM minimum is limited according to the system
   thermal requirements.
 
 Thermal tables for the minimum FAN setting are defined per system type and
@@ -78,30 +81,30 @@ if port side ambient sensor value is greater than FAN side ambient sensor
 value - the direction is power to cable (forward); if it less - the direction
 is cable to power (reversed), if these value are equal: the direction is
 unknown. For each system the following six tables are defined:
-- p2c_dir_trust_tx	all cables with trusted or with no sensors, FAN
+- p2c_dir_trust_tx:	all cables with trusted or with no sensors, FAN
 			direction is power to cable (forward)
-- p2c_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
+- p2c_dir_untrust_tx:	some cable sensor is untrusted, FAN direction is
 			power to cable (forward)
-- c2p_dir_trust_tx	all cables with trusted or with no sensors, FAN
+- c2p_dir_trust_tx:	all cables with trusted or with no sensors, FAN
 			direction is cable to power (reversed)
-- c2p_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
+- c2p_dir_untrust_tx:	some cable sensor is untrusted, FAN direction is
 			cable to power (reversed)
-- unk_dir_trust_tx	all cables with trusted or with no sensors, FAN
+- unk_dir_trust_tx:	all cables with trusted or with no sensors, FAN
 			direction is unknown
-- unk_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
+- unk_dir_untrust_tx:	some cable sensor is untrusted, FAN direction is
 			unknown
 
 Package contains the following files, used within the workload:
 - /lib/systemd/system/mellanox-thermal.service
-	system entries for thermal control activation and de-activation.
+-	system entries for thermal control activation and de-activation.
 - /lib/udev/rules.d/50-mellanox-thermal-events.rules
-	udev rules defining the triggers on which events should be handled.  
+-	udev rules defining the triggers on which events should be handled.  
 	When trigger is matched, rule data is to be passed to the event handler
 	(see below file /usr/bin/mellanox-thermal-events.sh).
 - /usr/bin/mellanox-thermal-control.sh
 	contains thermal algorithm implementation.
 - /usr/bin/mellanox-thermal-events.sh
-	handles udev triggers, according to the received data, it creates or
+-	handles udev triggers, according to the received data, it creates or
 	destroys symbolic links to sysfs entries. It allows to create system
 	independent entries and it allows thermal controls to work over this
 	system independent model.
@@ -111,27 +114,27 @@ Package contains the following files, used within the workload:
 	Sets PS units internal FAN speed to default value when unit is
 	connected to power source.
 - /usr/bin/mellanox-thermal.sh
-	performs initialization and de-initialization, detects the system type,
+-	performs initialization and de-initialization, detects the system type,
 	connects thermal drivers according to the system topology, activates
 	and deactivates thermal algorithm.
 
 SYSFS attributes:
-The thermal control operates over sysfs attributes. These attributes are
-exposed as symbolic links to /config/mellanox/thermal folder. These folder
-contains the next files (which are symbolic links):
-- cooling_cur_state	Current cooling state, exposed by cooling level (1..10)
-- fan<i>_fault		tachometer fault, <i> 1..max tachometers number
-- psu1_status		PS unit 1 presence status (1 - present, 0 - removed)
-- psu2_status		PS unit 2 presence status (1 - present, 0 - removed)
-- pwm			PWM speed exposed in RPM
-- temp_asic		ASIC ambient temperature value
-- temp_fan_amb		FAN side ambient temperature value
-- temp_port_amb		port side ambient temperature value
-- temp_port		port temperature value
-- temp_port_fault	port temperature fault
-- temp_trip_min		thermal zone minimum temperature trip
-- tz_mode		thermal zone mode (enabled or disabled)
-- tz_temp		thermal zone temperature
+- The thermal control operates over sysfs attributes. These attributes are
+  exposed as symbolic links to /config/mellanox/thermal folder. These folder
+  contains the next files (which are symbolic links):
+- cooling_cur_state:	Current cooling state, exposed by cooling level (1..10)
+- fan<i>_fault:		tachometer fault, <i> 1..max tachometers number
+- psu1_status:		PS unit 1 presence status (1 - present, 0 - removed)
+- psu2_status:		PS unit 2 presence status (1 - present, 0 - removed)
+- pwm:			PWM speed exposed in RPM
+- temp_asic:		ASIC ambient temperature value
+- temp_fan_amb:		FAN side ambient temperature value
+- temp_port_amb:	port side ambient temperature value
+- temp_port:		port temperature value
+- temp_port_fault:	port temperature fault
+- temp_trip_min:	thermal zone minimum temperature trip
+- tz_mode:		thermal zone mode (enabled or disabled)
+- tz_temp:		thermal zone temperature
 
 Kernel configuration required the next setting (kernel version should be v4.19
 or later):
@@ -233,16 +236,16 @@ The next command could be used in order to configure persistent initialization
 and de-initialization of mellanox-thermal:
 - systemctl enable mellanox-thermal
 - systemctl disable mellanox-thermal
-Running status of mellanox-thermal unit can be obtained by the following
-command:
+- Running status of mellanox-thermal unit can be obtained by the following
+  command:
 - systemctl status mellanox-thermal
-Logging records of the thermal control written by systemd-journald.service can
-be queried by the following command:
+- Logging records of the thermal control written by systemd-journald.service
+  can be queried by the following command:
 - journalctl --unit=mellanox-thermal
-Once "systemctl enable mellanox-thermal" is invoked, the thermal control will
-be automatically activated after the next and the following system reboots,
-until "systemctl disable mellanox-thermal" is not invoked.
-Application could be stopped by the following commands:
+- Once "systemctl enable mellanox-thermal" is invoked, the thermal control will
+  be automatically activated after the next and the following system reboots,
+  until "systemctl disable mellanox-thermal" is not invoked.
+  Application could be stopped by the following commands:
 - systemctl stop mellanox-thermal.service
 
 ## Authors
