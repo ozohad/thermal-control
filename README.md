@@ -47,12 +47,12 @@ contains the following polices:
   system definition. Such events will be reported to systemd journaling system.
 
 The thermal zones are defined with the following trip points:
-State		Temperature value	PWM speed	Action
-Cold:		t < 75 Celsius		20% *		Do nothing
-In range	75 <= t < 85 Celsius	20%-40% *	Keep minimal speed
-Hot:		85 <= t < 105		40%-100% *	Perform hot algorithm
-Hot alarm:	105 <= t < 110 Celsius	100%		Produce warning message
-Critical: 	t >= 110 Celsius	100%		System shutdown
+- State		Temperature value	PWM speed	Action
+- Cold:		t < 75 Celsius		20% *		Do nothing
+- In range	75 <= t < 85 Celsius	20%-40% *	Keep minimal speed
+- Hot:		85 <= t < 105		40%-100% *	Perform hot algorithm
+- Hot alarm:	105 <= t < 110 Celsius	100%		Produce warning message
+- Critical: 	t >= 110 Celsius	100%		System shutdown
 
 * Note:
 The above table defines default minimum FAN speed per each thermal zone. This
@@ -60,12 +60,12 @@ setting can be reset in case the dynamical minimum speed is changed. The
 cooling device bound to the thermal zone operates over the ten cooling logical
 levels. The default vector for the cooling levels is defined with the next PWM
 per level speeds:
-20%	20%	30%	40%	50%	60%	70%	80%	90%	100%
-In case system dynamical minimum is changed for example from 20% to 60%, the
-cooling level vector will be dynamically updated as below:
-60%	60%	60%	60%	60%	60%	70%	80%	90%	100%
-In such way the allowed PWM minimum is limited according to the system thermal
-requirements.
+- 20%	20%	30%	40%	50%	60%	70%	80%	90%	100%
+  In case system dynamical minimum is changed for example from 20% to 60%, the
+  cooling level vector will be dynamically updated as below:
+- 60%	60%	60%	60%	60%	60%	70%	80%	90%	100%
+  In such way the allowed PWM minimum is limited according to the system
+  thermal requirements.
 
 Thermal tables for the minimum FAN setting are defined per system type and
 contains entries with ambient temperature threshold values and relevant minimum
@@ -78,29 +78,29 @@ if port side ambient sensor value is greater than FAN side ambient sensor
 value - the direction is power to cable (forward); if it less - the direction
 is cable to power (reversed), if these value are equal: the direction is
 unknown. For each system the following six tables are defined:
-p2c_dir_trust_tx	all cables with trusted or with no sensors, FAN
+- p2c_dir_trust_tx	all cables with trusted or with no sensors, FAN
 			direction is power to cable (forward)
-p2c_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
+- p2c_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
 			power to cable (forward)
-c2p_dir_trust_tx	all cables with trusted or with no sensors, FAN
+- c2p_dir_trust_tx	all cables with trusted or with no sensors, FAN
 			direction is cable to power (reversed)
-c2p_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
+- c2p_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
 			cable to power (reversed)
-unk_dir_trust_tx	all cables with trusted or with no sensors, FAN
+- unk_dir_trust_tx	all cables with trusted or with no sensors, FAN
 			direction is unknown
-unk_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
+- unk_dir_untrust_tx	some cable sensor is untrusted, FAN direction is
 			unknown
 
 Package contains the following files, used within the workload:
-/lib/systemd/system/mellanox-thermal.service
+- /lib/systemd/system/mellanox-thermal.service
 	system entries for thermal control activation and de-activation.
-/lib/udev/rules.d/50-mellanox-thermal-events.rules
+- /lib/udev/rules.d/50-mellanox-thermal-events.rules
 	udev rules defining the triggers on which events should be handled.  
 	When trigger is matched, rule data is to be passed to the event handler
 	(see below file /usr/bin/mellanox-thermal-events.sh).
-/usr/bin/mellanox-thermal-control.sh
+- /usr/bin/mellanox-thermal-control.sh
 	contains thermal algorithm implementation.
-/usr/bin/mellanox-thermal-events.sh
+- /usr/bin/mellanox-thermal-events.sh
 	handles udev triggers, according to the received data, it creates or
 	destroys symbolic links to sysfs entries. It allows to create system
 	independent entries and it allows thermal controls to work over this
@@ -110,7 +110,7 @@ Package contains the following files, used within the workload:
 	have been removed.
 	Sets PS units internal FAN speed to default value when unit is
 	connected to power source.
-/usr/bin/mellanox-thermal.sh
+- /usr/bin/mellanox-thermal.sh
 	performs initialization and de-initialization, detects the system type,
 	connects thermal drivers according to the system topology, activates
 	and deactivates thermal algorithm.
@@ -119,58 +119,58 @@ SYSFS attributes:
 The thermal control operates over sysfs attributes. These attributes are
 exposed as symbolic links to /config/mellanox/thermal folder. These folder
 contains the next files (which are symbolic links):
-cooling_cur_state	Current cooling state, exposed by cooling level (1..10)
-fan<i>_fault		tachometer fault, <i> 1..max tachometers number
-psu1_status		PS unit 1 presence status (1 - present, 0 - removed)
-psu2_status		PS unit 2 presence status (1 - present, 0 - removed)
-pwm			PWM speed exposed in RPM
-temp_asic		ASIC ambient temperature value
-temp_fan_amb		FAN side ambient temperature value
-temp_port_amb		port side ambient temperature value
-temp_port		port temperature value
-temp_port_fault		port temperature fault
-temp_trip_min		thermal zone minimum temperature trip
-tz_mode			thermal zone mode (enabled or disabled)
-tz_temp			thermal zone temperature
+- cooling_cur_state	Current cooling state, exposed by cooling level (1..10)
+- fan<i>_fault		tachometer fault, <i> 1..max tachometers number
+- psu1_status		PS unit 1 presence status (1 - present, 0 - removed)
+- psu2_status		PS unit 2 presence status (1 - present, 0 - removed)
+- pwm			PWM speed exposed in RPM
+- temp_asic		ASIC ambient temperature value
+- temp_fan_amb		FAN side ambient temperature value
+- temp_port_amb		port side ambient temperature value
+- temp_port		port temperature value
+- temp_port_fault	port temperature fault
+- temp_trip_min		thermal zone minimum temperature trip
+- tz_mode		thermal zone mode (enabled or disabled)
+- tz_temp		thermal zone temperature
 
 Kernel configuration required the next setting (kernel version should be v4.19
 or later):
-	CONFIG_NET_VENDOR_MELLANOX
-	CONFIG_MELLANOX_PLATFORM
-	CONFIG_NET_DEVLINK
-	CONFIG_MAY_USE_DEVLINK
-	CONFIG_I2C
-	CONFIG_I2C_BOARDINFO
-	CONFIG_I2C_CHARDEV
-	CONFIG_I2C_MUX
-	CONFIG_I2C_MUX_REG
-	CONFIG_REGMAP
-	CONFIG_SYSFS
-	CONFIG_MLXSW_CORE
-	CONFIG_MLXSW_CORE_HWMON
-	CONFIG_MLXSW_CORE_THERMAL
-	CONFIG_MLXSW_PCI or/and CONFIG_MLXSW_I2C *
-	CONFIG_MLXSW_SPECTRUM or/and CONFIG_MLXSW_MINIMAL *
-	CONFIG_I2C_MLXCPLD
-	CONFIG_LEDS_MLXREG
-	CONFIG_MLX_PLATFORM
-	CONFIG_MLXREG_HOTPLUG
-	CONFIG_THERMAL
-	CONFIG_THERMAL_HWMON
-	CONFIG_THERMAL_WRITABLE_TRIPS
-	CONFIG_THERMAL_DEFAULT_GOV_STEP_WISE=y
-	CONFIG_THERMAL_GOV_STEP_WISE
-	CONFIG_PMBUS
-	CONFIG_SENSORS_PMBUS
-	CONFIG_HWMON
-	CONFIG_THERMAL_HWMON
-	CONFIG_SENSORS_LM75
-	CONFIG_SENSORS_TMP102
-	CONFIG_LEDS_MLXREG
-	CONFIG_LEDS_TRIGGERS
-	CONFIG_LEDS_TRIGGER_TIMER
-	CONFIG_NEW_LEDS
-	CONFIG_LEDS_CLASS
+- CONFIG_NET_VENDOR_MELLANOX
+- CONFIG_MELLANOX_PLATFORM
+- CONFIG_NET_DEVLINK
+- CONFIG_MAY_USE_DEVLINK
+- CONFIG_I2C
+- CONFIG_I2C_BOARDINFO
+- CONFIG_I2C_CHARDEV
+- CONFIG_I2C_MUX
+- CONFIG_I2C_MUX_REG
+- CONFIG_REGMAP
+- CONFIG_SYSFS
+- CONFIG_MLXSW_CORE
+- CONFIG_MLXSW_CORE_HWMON
+- CONFIG_MLXSW_CORE_THERMAL
+- CONFIG_MLXSW_PCI or/and CONFIG_MLXSW_I2C *
+- CONFIG_MLXSW_SPECTRUM or/and CONFIG_MLXSW_MINIMAL *
+- CONFIG_I2C_MLXCPLD
+- CONFIG_LEDS_MLXREG
+- CONFIG_MLX_PLATFORM
+- CONFIG_MLXREG_HOTPLUG
+- CONFIG_THERMAL
+- CONFIG_THERMAL_HWMON
+- CONFIG_THERMAL_WRITABLE_TRIPS
+- CONFIG_THERMAL_DEFAULT_GOV_STEP_WISE=y
+- CONFIG_THERMAL_GOV_STEP_WISE
+- CONFIG_PMBUS
+- CONFIG_SENSORS_PMBUS
+- CONFIG_HWMON
+- CONFIG_THERMAL_HWMON
+- CONFIG_SENSORS_LM75
+- CONFIG_SENSORS_TMP102
+- CONFIG_LEDS_MLXREG
+- CONFIG_LEDS_TRIGGERS
+- CONFIG_LEDS_TRIGGER_TIMER
+- CONFIG_NEW_LEDS
+- CONFIG_LEDS_CLASS
 
 * Note
 In case kernel is configured with CONFIG_MLXSW_PCI and CONFIG_MLXSW_SPECTRUM,
@@ -180,10 +180,10 @@ and thermal modules will work over I2C bus.
 
 
 The package depends on the next packages:
-	init-system-helpers:	helper tools for all init systems
-	lsb-base:		Linux Standard Base init script functionality
-	udev:			/dev/ and hotplug management daemon
-	i2c-tools:		heterogeneous set of I2C tools for Linux
+- init-system-helpers:	helper tools for all init systems
+- lsb-base:		Linux Standard Base init script functionality
+- udev:			/dev/ and hotplug management daemon
+- i2c-tools:		heterogeneous set of I2C tools for Linux
 
 Package contains the folder debian, with the rules for Debian package build.
 
@@ -231,19 +231,19 @@ rpm -e mellanox-thermal
 mellanox-thermal can be initialized and de-initialized by systemd service.
 The next command could be used in order to configure persistent initialization
 and de-initialization of mellanox-thermal:
-systemctl enable mellanox-thermal
-systemctl disable mellanox-thermal
+- systemctl enable mellanox-thermal
+- systemctl disable mellanox-thermal
 Running status of mellanox-thermal unit can be obtained by the following
 command:
-systemctl status mellanox-thermal
+- systemctl status mellanox-thermal
 Logging records of the thermal control written by systemd-journald.service can
 be queried by the following command:
-journalctl --unit=mellanox-thermal
+- journalctl --unit=mellanox-thermal
 Once "systemctl enable mellanox-thermal" is invoked, the thermal control will
 be automatically activated after the next and the following system reboots,
 until "systemctl disable mellanox-thermal" is not invoked.
 Application could be stopped by the following commands:
-systemctl stop mellanox-thermal.service
+- systemctl stop mellanox-thermal.service
 
 ## Authors
 
