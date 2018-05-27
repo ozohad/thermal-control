@@ -188,6 +188,7 @@ pwm_max=1
 pwm_max_rpm=255
 
 # Local variables
+report_counter=120
 pwm_required=$pwm_noact
 fan_max_state=10
 fan_dynamic_min=12
@@ -241,9 +242,11 @@ thermal_periodic_report()
 	f5=`cat $temp_port_amb`
 	f6=`cat $pwm`
 	f7=`cat $temp_port_fault`
-	log_progess_msg "Temperature: port $f1 asic $f2 tz $f3"
-	log_progess_msg "fan amb $f4 port amb $f5"
-	log_progess_msg "Cooling: pwm $f6 port fault $f7 dynaimc_min $fan_dynamic_min"
+	f8=$(($fan_dynamic_min-$fan_max_state))
+	f8=$(($f8*10))
+	log_success_msg "Temperature: port $f1 asic $f2 tz $f3"
+	log_success_msg "fan amb $f4 port amb $f5"
+	log_success_msg "Cooling: pwm $f6 port fault $f7 dynaimc_min $f8"
 }
 
 config_p2c_dir_trust()
@@ -570,6 +573,9 @@ validate_thermal_configuration
 echo $thermal_control_pid > /var/run/mellanox-thermal.pid
 log_progress_msg "Mellanox thermal control is started"
 
+# Periodic report counter
+periodic_report=$(($polling_time*$report_counter))
+count=0
 # Start thermal monitoring.
 while true
 do
@@ -610,5 +616,10 @@ do
 		# speed to dynamic speed minimum value and give to kernel
 		# thermal algorithm can stabilize PWM speed if necessary.
 		check_trip_nin_vs_current_temp 2
+	fi
+	count=$(($count+1))
+	if [ $count -eq $periodic_report ]; then
+		count=0
+		thermal_periodic_report
 	fi
 done
