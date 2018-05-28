@@ -401,7 +401,7 @@ set_pwm_min_threshold()
 			for ((i=0; i<$size; i+=2)); do
 				tresh=${p2c_dir_trust[i]}
 				if [ $ambient -lt $tresh ]; then
-					echo $p2c_dir_trust[$(($i+1))] > $fan_dynamic_min
+					fan_dynamic_min=${p2c_dir_trust[$(($i+1))]}
 					break
 				fi
 			done
@@ -410,7 +410,7 @@ set_pwm_min_threshold()
 			for ((i=0; i<$size; i+=2)); do
 				tresh=${c2p_dir_trust[i]}
 				if [ $ambient -lt $tresh ]; then
-					echo $c2p_dir_trust[$(($i+1))] > $fan_dynamic_min
+					fan_dynamic_min=${c2p_dir_trust[$(($i+1))]}
 					break
 				fi
 			done
@@ -419,7 +419,7 @@ set_pwm_min_threshold()
 			for ((i=0; i<$size; i+=2)); do
 				tresh=${unk_dir_trust[i]}
 				if [ $ambient -lt $tresh]; then
-					echo $unk_dir_trust[$(($i+1))] > $fan_dynamic_min
+					fan_dynamic_min==${unk_dir_trust[$(($i+1))]}
 					break
 				fi
 			done
@@ -430,7 +430,7 @@ set_pwm_min_threshold()
 			for ((i=0; i<$size; i+=2)); do
 				tresh=${unk_dir_untrust[i]}
 				if [ $ambient -lt $tresh ]; then
-					echo ${unk_dir_untrust[$(($i+1))]} > $fan_dynamic_min
+					fan_dynamic_min=${unk_dir_untrust[$(($i+1))]}
 					break
 				fi
 			done
@@ -439,7 +439,7 @@ set_pwm_min_threshold()
 			for ((i=0; i<$size; i+=2)); do
 				tresh=${c2p_dir_untrust[i]}
 				if [ $ambient -lt $tresh ]; then
-					echo $c2p_dir_untrust[$(($i+1))] > $fan_dynamic_min
+					fan_dynamic_min=${c2p_dir_untrust[$(($i+1))]}
 					break
 				fi
 			done
@@ -448,7 +448,7 @@ set_pwm_min_threshold()
 			for ((i=0; i<$size; i+=2)); do
 				tresh=${unk_dir_untrust[i]}
 				if [ $ambient -lt $tresh ]; then
-					echo $unk_dir_untrust[$(($i+1))] > $fan_dynamic_min
+					fan_dynamic_min=${unk_dir_untrust[$(($i+1))]}
 					break
 				fi
 			done
@@ -456,7 +456,9 @@ set_pwm_min_threshold()
 	fi
 }
 
-case $system_thermal_type in
+init_system_dynamic_minimum_db()
+{
+	case $system_thermal_type in
 	1)
 		# Config FAN minimal speed setting for class t1
 		config_p2c_dir_trust "${p2c_dir_trust_t1[@]}"
@@ -497,7 +499,8 @@ case $system_thermal_type in
 		echo thermal type $system_thermal_type is not supported
 		exit 0
 		;;
-esac
+	esac
+}
 
 thermal_control_exit()
 {
@@ -569,9 +572,11 @@ fi
 
 # Validate thermal configuration.
 validate_thermal_configuration
+# Initialize system dynamic minimum speed data base.
+init_system_dynamic_minimum_db
 
 echo $thermal_control_pid > /var/run/mellanox-thermal.pid
-log_progress_msg "Mellanox thermal control is started"
+log_action_msg "Mellanox thermal control is started"
 
 # Periodic report counter
 periodic_report=$(($polling_time*$report_counter))
