@@ -122,7 +122,7 @@ msn274x_specific()
 		dis_table[i]=${msn2740_dis_table[i]}
 	done
 
-	thermal_type=$thermal_type_t1
+	thermal_type=$thermal_type_t3
 	max_tachos=4
 }
 
@@ -137,8 +137,7 @@ msn21xx_specific()
 		dis_table[i]=${msn2100_dis_table[i]}
 	done
 
-	thermal_type=$thermal_type_t3
-	thermal_type=$thermal_type_t1
+	thermal_type=$thermal_type_t2
 	max_tachos=8
 	max_psus=0
 }
