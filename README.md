@@ -253,8 +253,9 @@ and de-initialization of mellanox-thermal:
   command:
 - systemctl status mellanox-thermal
 - Logging records of the thermal control written by systemd-journald.service
-  can be queried by the following command:
+  can be queried by the following commands:
 - journalctl --unit=mellanox-thermal
+- journalctl -f -u mellanox-thermal
 - Once "systemctl enable mellanox-thermal" is invoked, the thermal control will
   be automatically activated after the next and the following system reboots,
   until "systemctl disable mellanox-thermal" is not invoked.
