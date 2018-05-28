@@ -180,7 +180,20 @@ In case kernel is configured with CONFIG_MLXSW_PCI and CONFIG_MLXSW_SPECTRUM,
 mlxsw kernel hwmon and thermal modules will work over PCI bus. In this case
 mlxsw_i2c and mlxsw_minimal drivers will not be activated. In other case hwmon
 and thermal modules will work over I2C bus.
-
+If user wants to have both PCI and I2C option configured and want enforce
+thermal control to work over I2C, for example user which wants to be able to
+switch between workloads running Mellanox legacy SDK code and running Mellanox
+switch-dev driver, the next steps should be performed:
+- Create blacklist file with next wo lines, f.e.
+  /etc/modprobe.d/mellanox-sdk-blacklist.conf
+  blacklist mlxsw_spectrum
+  blacklist mlxsw_pci
+- And then run:
+  update-initramfs -u (in case initramfs is used)
+For returning back to PCI option:
+- Remove /etc/modprobe.d/mellanox-sdk-blacklist.conf
+- And then run:
+  update-initramfs -u (in case initramfs is used)
 
 The package depends on the next packages:
 - init-system-helpers:	helper tools for all init systems
@@ -200,17 +213,17 @@ For Debian package build:
 On a debian-based system, install the following programs:
 sudo apt-get install devscripts build-essential lintian
 
-a) Go into thermal-control base folder and build Debian package.
-b) Run:
-debuild -us -uc
-c) Find in upper folder f.e. mellanox-thermal_1.mlnx.18.05.2018_amd64.deb
+- Go into thermal-control base folder and build Debian package.
+- Run:
+  debuild -us -uc
+- Find in upper folder f.e. mellanox-thermal_1.mlnx.18.05.2018_amd64.deb
 
 For converting deb package to rpm package:
 On a debian-based system, install the following program:
 sudo apt-get install alien
 
-a) alien --to-rpm mellanox-thermal_1.mlnx.18.05.2018_amd64.deb
-b) Find mellanox-thermal-1.mlnx.18.05.2018-2.x86_64.rpm
+- alien --to-rpm mellanox-thermal_1.mlnx.18.05.2018_amd64.deb
+- Find mellanox-thermal-1.mlnx.18.05.2018-2.x86_64.rpm
 
 ## Installation from local file and de-installation
 Copy deb or rpm package to the system, for example to /tmp.
@@ -221,13 +234,13 @@ remove with:
 dpkg --purge mellanox-thermal
 
 For rpm install with:
-yum localinstall /tmp/mellanox-thermal-1.mlnx.18.05.2018-2.x86_64.rpm
-or
-rpm -ivh -r /tmp mellanox-thermal-1.mlnx.18.05.2018-2.x86_64.rpm
-remove with:
-yum remove mellanox-thermal
-or
-rpm -e mellanox-thermal
+- yum localinstall /tmp/mellanox-thermal-1.mlnx.18.05.2018-2.x86_64.rpm
+  or
+- rpm -ivh -r /tmp mellanox-thermal-1.mlnx.18.05.2018-2.x86_64.rpm
+  remove with:
+- yum remove mellanox-thermal
+  or
+- rpm -e mellanox-thermal
 
 
 ## Activation, de-activation and reading status
