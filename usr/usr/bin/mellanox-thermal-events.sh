@@ -52,7 +52,8 @@ if [ "$1" == "add" ]; then
 	fi
 	if [ "$2" == "cooling_device" ]; then
 		coolingtype=`cat $3$4/type`
-		if [ "$coolingtype" == "Fan" ]; then
+		if [ "$coolingtype" == "mlxsw_fan" ] ||
+		   [ "$coolingtype" == "mlxreg_fan" ]; then
 			ln -sf $3$4/cur_state $thermal_path/cooling_cur_state
 		fi
 	fi
@@ -121,7 +122,8 @@ else
 
 	if [ "$2" == "cooling_device" ]; then
 		coolingtype=`cat $3$4/type`
-		if [ "$coolingtype" == "Fan" ]; then
+		if [ "$coolingtype" == "mlxsw_fan" ] ||
+		   [ "$coolingtype" == "mlxreg_fan" ]; then
 			unlink $thermal_path/cooling_cur_state
 		fi
 	fi

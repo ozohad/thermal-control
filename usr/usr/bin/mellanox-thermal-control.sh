@@ -58,6 +58,12 @@ max_tachos=${2:-$max_tachos_def}
 max_psus=${3:-$max_psus_def}
 polling_time=${4:-$polling_time_def}
 
+# Local constants
+pwm_noact=0
+pwm_max=1
+pwm_max_rpm=255
+max_amb=12000
+
 # Thermal tables for the minimum FAN setting per system time. It contains
 # entries with ambient temperature threshold values and relevant minimum
 # speed setting. All Mellanox system are equipped with two ambient sensors:
@@ -103,12 +109,12 @@ polling_time=${4:-$polling_time_def}
 # 35-40		30	60	60	60	60	60
 # 40-45		50	60	60	60	60	60
 
-p2c_dir_trust_t1=(45000 13)
-p2c_dir_untrust_t1=(25000 13 30000 14 30000 14 35000 15 40000 16)
-c2p_dir_trust_12=(20000 13 25000 14 30000 15 35000 16)
-c2p_dir_untrust_t1=(20000 13 25000 14 30000 15 35000 16)
-unk_dir_trust_t1=(20000 13 25000 14 30000 15 35000 16)
-unk_dir_untrust_t1=(20000 13 25000 14 30000 15 35000 16)
+p2c_dir_trust_t1=(45000 13 $max_amb 13)
+p2c_dir_untrust_t1=(25000 13 30000 14 30000 14 35000 15 40000 16 $max_amb 16)
+c2p_dir_trust_12=(20000 13 25000 14 30000 15 35000 16 $max_amb 16)
+c2p_dir_untrust_t1=(20000 13 25000 14 30000 15 35000 16 $max_amb 16)
+unk_dir_trust_t1=(20000 13 25000 14 30000 15 35000 16 $max_amb 16)
+unk_dir_untrust_t1=(20000 13 25000 14 30000 15 35000 16  $max_amb 16)
 
 # Class t2 for MSN21* (Bulldog)
 # Direction	P2C		C2P		Unknown
@@ -127,12 +133,12 @@ unk_dir_untrust_t1=(20000 13 25000 14 30000 15 35000 16)
 # 35-40		20	60	20	20	20	60
 # 40-45		20	60	30	30	30	60
 
-p2c_dir_trust_t2=(45000 12)
-p2c_dir_untrust_t2=(15000 12 25000 13 30000 14 35000 15 40000 16)
-c2p_dir_trust_t2=(40000 12 45000 13)
-c2p_dir_untrust_t2=(40000 12 45000 13)
-unk_dir_trust_t2=(40000 12 45000 13)
-unk_dir_untrust_t2=(15000 12 25000 13 30000 14 35000 15 40000 16)
+p2c_dir_trust_t2=(45000 12 $max_amb 12)
+p2c_dir_untrust_t2=(15000 12 25000 13 30000 14 35000 15 40000 16 $max_amb 16)
+c2p_dir_trust_t2=(40000 12 45000 13 $max_amb 13)
+c2p_dir_untrust_t2=(40000 12 45000 13 $max_amb 13)
+unk_dir_trust_t2=(40000 12 45000 13 $max_amb 13)
+unk_dir_untrust_t2=(15000 12 25000 13 30000 14 35000 15 40000 16 $max_amb 16)
 
 # Class t3 for MSN274* (Panther SF)
 # Direction	P2C		C2P		Unknown
@@ -151,12 +157,12 @@ unk_dir_untrust_t2=(15000 12 25000 13 30000 14 35000 15 40000 16)
 # 35-40		30	40	30	70	30	70
 # 40-45		30	50	30	70	30	70
 
-p2c_dir_trust_t3=(45000 13)
-p2c_dir_untrust_t3=(35000 13 40000 14 45000 15)
-c2p_dir_trust_t3=(45000 13)
-c2p_dir_untrust_t3=(15000 13 30000 14 35000 15 40000 17)
-unk_dir_trust_t3=(45000 13)
-unk_dir_untrust_t3=(15000 13 30000 14 35000 15 40000 17)
+p2c_dir_trust_t3=(45000 13  $max_amb 13)
+p2c_dir_untrust_t3=(35000 13 40000 14 45000 15 $max_amb 15)
+c2p_dir_trust_t3=(45000 13  $max_amb 13)
+c2p_dir_untrust_t3=(15000 13 30000 14 35000 15 40000 17 $max_amb 17)
+unk_dir_trust_t3=(45000 13 $max_amb 13)
+unk_dir_untrust_t3=(15000 13 30000 14 35000 15 40000 17 $max_amb 17)
 
 # Class t4 for MSN201* (Boxer)
 # Direction	P2C		C2P		Unknown
@@ -175,17 +181,12 @@ unk_dir_untrust_t3=(15000 13 30000 14 35000 15 40000 17)
 # 35-40		20	60	20	60	20	60
 # 40-45		20	60	20	60	20	60
 
-p2c_dir_trust_t4=(45000 12)
-p2c_dir_untrust_t4=(10000 12 15000 13 20000 14 30000 15 35000 16)
-c2p_dir_trust_t4=(45000 12)
-c2p_dir_untrust_t4=(15000 12 20000 13 25000 14 30000 15 35000 16)
-unk_dir_trust_t4=(45000 12)
-unk_dir_untrust_t4=(10000 12 15000 13 20000 14 30000 15 35000 16)
-
-# Local constants
-pwm_noact=0
-pwm_max=1
-pwm_max_rpm=255
+p2c_dir_trust_t4=(45000 12 $max_amb 12)
+p2c_dir_untrust_t4=(10000 12 15000 13 20000 14 30000 15 35000 16 $max_amb 16)
+c2p_dir_trust_t4=(45000 12 $max_amb 12)
+c2p_dir_untrust_t4=(15000 12 20000 13 25000 14 30000 15 35000 16 $max_amb 16)
+unk_dir_trust_t4=(45000 12  $max_amb 12)
+unk_dir_untrust_t4=(10000 12 15000 13 20000 14 30000 15 35000 16 $max_amb 16)
 
 # Local variables
 report_counter=120
@@ -512,7 +513,7 @@ thermal_control_exit()
 	exit 1
 }
 
-check_trip_nin_vs_current_temp()
+check_trip_min_vs_current_temp()
 {
 	trip_min=`cat $temp_trip_min`
 	temp_now=`cat $tz_temp`
@@ -546,7 +547,7 @@ thermal_control_event()
 	# PWM will be in not optimal. Set PWM speed to dynamic speed minimum
 	# value and give to kernel thermal algorithm can stabilize PWM speed
 	# if necessary.
-	check_trip_nin_vs_current_temp 1
+	check_trip_min_vs_current_temp 1
 }
 
 # Handle the next POSIX signals by thermal_control_exit:
@@ -620,7 +621,7 @@ do
 		# System health (PS units or FANs) has been recovered. Set PWM
 		# speed to dynamic speed minimum value and give to kernel
 		# thermal algorithm can stabilize PWM speed if necessary.
-		check_trip_nin_vs_current_temp 2
+		check_trip_min_vs_current_temp 2
 	fi
 	count=$(($count+1))
 	if [ $count -eq $periodic_report ]; then
