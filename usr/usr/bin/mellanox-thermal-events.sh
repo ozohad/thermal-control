@@ -37,9 +37,8 @@ if [ "$1" == "add" ]; then
 					ln -sf $3$4/fan"$i"_fault $thermal_path/fan"$i"_fault
 				fi
 			done
-		elif [ "$name" == "mlxsw_port" ]; then
-			ln -sf $3$4/temp1_input $thermal_path/temp1_input_port
-			ln -sf $3$4/temp1_fault $thermal_path/temp1_fault_port
+			ln -sf $3$4/temp2_input $thermal_path/temp1_input_port
+			ln -sf $3$4/temp2_fault $thermal_path/temp1_fault_port
 		fi
 	fi
 	if [ "$2" == "thermal_zone" ]; then
@@ -105,8 +104,7 @@ else
 					unlink $thermal_path/fan"$i"_fault
 				fi
 			done
-			unlink  $thermal_path/$pwm1
-		elif [ "$name" == "mlxsw_port" ]; then
+			unlink $thermal_path/$pwm1
 			unlink $thermal_path/temp1_input_port
 			unlink $thermal_path/temp1_fault_port
 		fi

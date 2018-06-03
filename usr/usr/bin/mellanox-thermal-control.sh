@@ -62,7 +62,7 @@ polling_time=${4:-$polling_time_def}
 pwm_noact=0
 pwm_max=1
 pwm_max_rpm=255
-max_amb=12000
+max_amb=120000
 
 # Thermal tables for the minimum FAN setting per system time. It contains
 # entries with ambient temperature threshold values and relevant minimum
