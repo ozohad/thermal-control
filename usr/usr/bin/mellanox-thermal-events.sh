@@ -36,6 +36,9 @@ if [ "$1" == "add" ]; then
 				if [ -f $3$4/fan"$i"_fault ]; then
 					ln -sf $3$4/fan"$i"_fault $thermal_path/fan"$i"_fault
 				fi
+				if [ -f $3$4/fan"$i"_input ]; then
+					ln -sf $3$4/fan"$i"_input $thermal_path/fan"$i"_input
+				fi
 			done
 			ln -sf $3$4/temp2_input $thermal_path/temp1_input_port
 			ln -sf $3$4/temp2_fault $thermal_path/temp1_fault_port
@@ -102,6 +105,9 @@ else
 			for ((i=1; i<=$max_tachos; i+=1)); do
 				if [ -L $thermal_path/fan"$i"_fault ]; then
 					unlink $thermal_path/fan"$i"_fault
+				fi
+				if [ -L $thermal_path/fan"$i"_input ]; then
+					unlink $thermal_path/fan"$i"_input
 				fi
 			done
 			unlink $thermal_path/$pwm1

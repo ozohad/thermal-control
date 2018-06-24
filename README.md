@@ -124,6 +124,7 @@ SYSFS attributes:
   contains the next files (which are symbolic links):
 - cooling_cur_state:	Current cooling state, exposed by cooling level (1..10)
 - fan<i>_fault:		tachometer fault, <i> 1..max tachometers number
+- fan<i>_input:		tachometer input, <i> 1..max tachometers number
 - psu1_status:		PS unit 1 presence status (1 - present, 0 - removed)
 - psu2_status:		PS unit 2 presence status (1 - present, 0 - removed)
 - pwm:			PWM speed exposed in RPM

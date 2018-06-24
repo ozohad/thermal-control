@@ -115,6 +115,8 @@ c2p_dir_trust_12=(20000 13 25000 14 30000 15 35000 16 $max_amb 16)
 c2p_dir_untrust_t1=(20000 13 25000 14 30000 15 35000 16 $max_amb 16)
 unk_dir_trust_t1=(20000 13 25000 14 30000 15 35000 16 $max_amb 16)
 unk_dir_untrust_t1=(20000 13 25000 14 30000 15 35000 16  $max_amb 16)
+trust1=16
+untrust1=16
 
 # Class t2 for MSN21* (Bulldog)
 # Direction	P2C		C2P		Unknown
@@ -139,6 +141,8 @@ c2p_dir_trust_t2=(40000 12 45000 13 $max_amb 13)
 c2p_dir_untrust_t2=(40000 12 45000 13 $max_amb 13)
 unk_dir_trust_t2=(40000 12 45000 13 $max_amb 13)
 unk_dir_untrust_t2=(15000 12 25000 13 30000 14 35000 15 40000 16 $max_amb 16)
+trust2=13
+untrust2=16
 
 # Class t3 for MSN274* (Panther SF)
 # Direction	P2C		C2P		Unknown
@@ -163,6 +167,8 @@ c2p_dir_trust_t3=(45000 13  $max_amb 13)
 c2p_dir_untrust_t3=(15000 13 30000 14 35000 15 40000 17 $max_amb 17)
 unk_dir_trust_t3=(45000 13 $max_amb 13)
 unk_dir_untrust_t3=(15000 13 30000 14 35000 15 40000 17 $max_amb 17)
+trust3=13
+untrust3=17
 
 # Class t4 for MSN201* (Boxer)
 # Direction	P2C		C2P		Unknown
@@ -187,6 +193,8 @@ c2p_dir_trust_t4=(45000 12 $max_amb 12)
 c2p_dir_untrust_t4=(15000 12 20000 13 25000 14 30000 15 35000 16 $max_amb 16)
 unk_dir_trust_t4=(45000 12  $max_amb 12)
 unk_dir_untrust_t4=(10000 12 15000 13 20000 14 30000 15 35000 16 $max_amb 16)
+trust4=12
+untrust4=16
 
 # Local variables
 report_counter=120
@@ -206,6 +214,10 @@ validate_thermal_configuration()
 	for ((i=1; i<=$max_tachos; i+=1)); do
 		if [ ! -L $thermal_path/fan"$i"_fault ]; then
 			log_failure_msg "FAN fault status attributes are not exist"
+			exit 1
+		fi
+		if [ ! -L $thermal_path/fan"$i"_input ]; then
+			log_failure_msg "FAN input attributes are not exist"
 			exit 1
 		fi
 	done
@@ -245,9 +257,18 @@ thermal_periodic_report()
 	f7=`cat $temp_port_fault`
 	f8=$(($fan_dynamic_min-$fan_max_state))
 	f8=$(($f8*10))
+	log_success_msg "Thermal periodic report"
+	log_success_msg "======================="
 	log_success_msg "Temperature: port $f1 asic $f2 tz $f3"
 	log_success_msg "fan amb $f4 port amb $f5"
 	log_success_msg "Cooling: pwm $f6 port fault $f7 dynaimc_min $f8"
+	for ((i=1; i<=$max_tachos; i+=1)); do
+		if [ -f $thermal_path/fan"$i"_input ]; then
+			tacho=`cat $thermal_path/fan"$i"_input`
+			fault=`cat $thermal_path/fan"$i"_fault`
+			log_success_msg "tacho$i speed is $tacho fault is $fault"
+		fi
+	done
 }
 
 config_p2c_dir_trust()
@@ -503,6 +524,53 @@ init_system_dynamic_minimum_db()
 	esac
 }
 
+set_pwm_min_speed()
+{
+	untrusted_sensor=0
+
+	# Check for untrusted modules
+	temp1_fault=`cat $temp_port_fault`
+	if [ $temp1_fault -eq 1 ]; then
+		untrusted_sensor=1
+	fi
+	# Set FAN minimum speed according to  presence of untrusted cabels.
+	if [ $untrusted_sensor -eq 0 ]; then
+		fan_dynamic_min=$config_trust
+	else
+		fan_dynamic_min=$config_untrust
+	fi
+}
+
+init_fan_dynamic_minimum_speed()
+{
+	case $system_thermal_type in
+	1)
+		# Config FAN minimal speed setting for class t1
+		config_trust=$trust1
+		config_untrust=$untrust1
+		;;
+	2)
+		# Config FAN minimal speed setting for class t2
+		config_trust=$trust2
+		config_untrust=$untrust2
+		;;
+	3)
+		# Config FAN minimal speed setting for class t3
+		config_trust=$trust3
+		config_untrust=$untrust3
+		;;
+	4)
+		# Config FAN minimal speed setting for class t4
+		config_trust=$trust4
+		config_untrust=$untrust4
+		;;
+	*)
+		echo thermal type $system_thermal_type is not supported
+		exit 0
+		;;
+	esac
+}
+
 thermal_control_exit()
 {
 	if [ -f /var/run/mellanox-thermal.pid ]; then
@@ -574,13 +642,14 @@ fi
 # Validate thermal configuration.
 validate_thermal_configuration
 # Initialize system dynamic minimum speed data base.
-init_system_dynamic_minimum_db
+init_fan_dynamic_minimum_speed
 
 echo $thermal_control_pid > /var/run/mellanox-thermal.pid
 log_action_msg "Mellanox thermal control is started"
 
 # Periodic report counter
 periodic_report=$(($polling_time*$report_counter))
+periodic_report=12	# For debug - remove after tsting
 count=0
 # Start thermal monitoring.
 while true
@@ -601,7 +670,7 @@ do
 	# Set dynamic FAN speed minimum, depending on ambient temperature,
 	# presence of untrusted optical cables or presence of any cables
 	# with untrusted temperature sensing.
-	set_pwm_min_threshold
+	set_pwm_min_speed
 	# Update cooling levels of FAN If dynamic minimum has been changed
 	# since the last time.
 	if [ $fan_dynamic_min -ne $fan_dynamic_min_last ]; then
