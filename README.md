@@ -22,7 +22,7 @@ thermal trends (high temperature = faster fan; lower temperature = slower fan).
 
 Description:
 The thermal zone binds PWM control and the temperature measure from the
-transceivers and from the ASIC (swictch ambient). Kernel algorithm uses step
+transceivers and from the ASIC (switch ambient). Kernel algorithm uses step
 wise policy.It creates the set of thermal zones, where each relevant thermal
 sensor is bound to the same PWM control.
 For details, please refer to kernel documentation file:
