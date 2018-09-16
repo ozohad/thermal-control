@@ -41,18 +41,17 @@ contains the following polices:
   tachometers is broken present (in such case thermal monitoring in kernel is
   set to disabled state until the problem is not recovered). Such events will
   be reported to systemd journaling system.
-- Setting PWM dynamic speed minimum. The dynamic setting depends on FAN
-  direction and cable type. For system with copper cables only or/and with
-  trusted optic cable minimum PWM setting could be decreased according to the
-  system definition. Such events will be reported to systemd journaling system.
 
-The thermal zones are defined with the following trip points:
+The ASIC thermal zone is defined with the following trip points:
 - State		Temperature value	PWM speed	Action
 - Cold:		t < 75 Celsius		20% *		Do nothing
 - In range	75 <= t < 85 Celsius	20%-40% *	Keep minimal speed
 - Hot:		85 <= t < 105		40%-100% *	Perform hot algorithm
 - Hot alarm:	105 <= t < 110 Celsius	100%		Produce warning message
 - Critical: 	t >= 110 Celsius	100%		System shutdown
+
+The transceivers thermal zones are defined with the dynamical trip points,
+according to the thresholds values read from the transceivers EEPROM data.
 
 - All the above trip points, excepted last one, are defined with 5 Celsius
   hysteresis trip.
@@ -69,30 +68,6 @@ per level speeds:
 - 60%	60%	60%	60%	60%	60%	70%	80%	90%	100%
 - In such way the allowed PWM minimum is limited according to the system
   thermal requirements.
-
-Thermal tables for the minimum FAN setting are defined per system type and
-contains entries with ambient temperature threshold values and relevant minimum
-speed setting. All Mellanox system are equipped with two ambient sensors:
-port side ambient sensor and FAN side ambient sensor. FAN direction can
-be read from FAN EEPROM data, in case FAN is equipped with EEPROM device,
-it can be read from CPLD FAN direction register in other case. Or for the
-common case it can be calculated according to the next rule:
-if port side ambient sensor value is greater than FAN side ambient sensor
-value - the direction is power to cable (forward); if it less - the direction
-is cable to power (reversed), if these value are equal: the direction is
-unknown. For each system the following six tables are defined:
-- p2c_dir_trust_tx:	all cables with trusted or with no sensors, FAN
-			direction is power to cable (forward)
-- p2c_dir_untrust_tx:	some cable sensor is untrusted, FAN direction is
-			power to cable (forward)
-- c2p_dir_trust_tx:	all cables with trusted or with no sensors, FAN
-			direction is cable to power (reversed)
-- c2p_dir_untrust_tx:	some cable sensor is untrusted, FAN direction is
-			cable to power (reversed)
-- unk_dir_trust_tx:	all cables with trusted or with no sensors, FAN
-			direction is unknown
-- unk_dir_untrust_tx:	some cable sensor is untrusted, FAN direction is
-			unknown
 
 Package contains the following files, used within the workload:
 - /lib/systemd/system/mellanox-thermal.service
