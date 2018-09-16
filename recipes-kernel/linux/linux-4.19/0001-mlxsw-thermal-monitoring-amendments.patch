@@ -1,6 +1,6 @@
-From b97bebf0194f1c8b498c35fde6b7c84d6817d84d Mon Sep 17 00:00:00 2001
+From 8851c62eb480b47f970cb592f55a00db51934529 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@mellanox.com>
-Date: Sun, 16 Sep 2018 12:47:30 +0000
+Date: Sun, 16 Sep 2018 13:53:27 +0000
 Subject: [patch test 1/1] mlxsw: thermal monitoring amendments
 
 This patchset extends mlxsw hwmon and thermal modules with ports
@@ -94,11 +94,11 @@ Signed-off-by: Vadim Pasternak <vadimp@mellanox.com>
  drivers/net/ethernet/mellanox/mlxsw/core_env.c     | 110 ++++
  drivers/net/ethernet/mellanox/mlxsw/core_env.h     |  10 +
  drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c   | 264 ++++++++-
- drivers/net/ethernet/mellanox/mlxsw/core_thermal.c | 613 ++++++++++++++++++++-
+ drivers/net/ethernet/mellanox/mlxsw/core_thermal.c | 612 ++++++++++++++++++++-
  drivers/net/ethernet/mellanox/mlxsw/i2c.c          |   1 +
  drivers/net/ethernet/mellanox/mlxsw/reg.h          | 130 ++++-
  drivers/net/ethernet/mellanox/mlxsw/spectrum.c     |  62 +--
- 9 files changed, 1116 insertions(+), 77 deletions(-)
+ 9 files changed, 1115 insertions(+), 77 deletions(-)
  create mode 100644 drivers/net/ethernet/mellanox/mlxsw/core_env.c
  create mode 100644 drivers/net/ethernet/mellanox/mlxsw/core_env.h
 
@@ -622,7 +622,7 @@ index f6cf289..5c41d97 100644
  err_temp_init:
  	return err;
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
-index 6d29dc4..ef78884 100644
+index 6d29dc4..5357cb0 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
 @@ -1,7 +1,5 @@
@@ -1232,7 +1232,7 @@ index 6d29dc4..ef78884 100644
  	return 0;
  }
  
-@@ -306,6 +755,78 @@ static const struct thermal_cooling_device_ops mlxsw_cooling_ops = {
+@@ -306,6 +755,77 @@ static const struct thermal_cooling_device_ops mlxsw_cooling_ops = {
  	.set_cur_state	= mlxsw_thermal_set_cur_state,
  };
  
@@ -1298,7 +1298,6 @@ index 6d29dc4..ef78884 100644
 +
 +	return 0;
 +err_unreg_tzdev_port:
-+	tz = thermal->tzdev_port;
 +	for (i = cntr - 1; i >= 0; i--, tz--) {
 +		if (tz && tz->tzdev)
 +			thermal_zone_device_unregister(tz->tzdev);
@@ -1311,7 +1310,7 @@ index 6d29dc4..ef78884 100644
  int mlxsw_thermal_init(struct mlxsw_core *core,
  		       const struct mlxsw_bus_info *bus_info,
  		       struct mlxsw_thermal **p_thermal)
-@@ -358,7 +879,8 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
+@@ -358,7 +878,8 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
  		if (pwm_active & BIT(i)) {
  			struct thermal_cooling_device *cdev;
  
@@ -1321,7 +1320,7 @@ index 6d29dc4..ef78884 100644
  							&mlxsw_cooling_ops);
  			if (IS_ERR(cdev)) {
  				err = PTR_ERR(cdev);
-@@ -369,22 +891,43 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
+@@ -369,22 +890,43 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
  		}
  	}
  
@@ -1366,7 +1365,7 @@ index 6d29dc4..ef78884 100644
  err_unreg_cdevs:
  	for (i = 0; i < MLXSW_MFCR_PWMS_MAX; i++)
  		if (thermal->cdevs[i])
-@@ -396,8 +939,17 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
+@@ -396,8 +938,17 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
  
  void mlxsw_thermal_fini(struct mlxsw_thermal *thermal)
  {
@@ -1374,7 +1373,7 @@ index 6d29dc4..ef78884 100644
  	int i;
  
 +	tz = thermal->tzdev_port;
-+	for (i = thermal->tz_port_num - 1; i >= 0; i--, tz--) {
++	for (i = 0; i <= thermal->tz_port_num - 1; i++, tz++) {
 +		if (tz && tz->tzdev) {
 +			thermal_zone_device_unregister(tz->tzdev);
 +			tz->tzdev = NULL;
@@ -1384,7 +1383,7 @@ index 6d29dc4..ef78884 100644
  	if (thermal->tzdev) {
  		thermal_zone_device_unregister(thermal->tzdev);
  		thermal->tzdev = NULL;
-@@ -410,5 +962,6 @@ void mlxsw_thermal_fini(struct mlxsw_thermal *thermal)
+@@ -410,5 +961,6 @@ void mlxsw_thermal_fini(struct mlxsw_thermal *thermal)
  		}
  	}
  

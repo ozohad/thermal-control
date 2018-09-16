@@ -117,6 +117,10 @@ Package contains the following files, used within the workload:
 -	performs initialization and de-initialization, detects the system type,
 	connects thermal drivers according to the system topology, activates
 	and deactivates thermal algorithm.
+- recipes-kernel/linux/linux-4.19/0001-mlxsw-thermal-monitoring-amendments.patch
+-	kernel patch for v4.19
+- recipes-kernel/linux/linux-4.19/series
+-	kernel patch series file
 
 SYSFS attributes:
 - The thermal control operates over sysfs attributes. These attributes are

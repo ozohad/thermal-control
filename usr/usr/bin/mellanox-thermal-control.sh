@@ -34,17 +34,21 @@
 
 # Paths to thermal sensors, device present states, thermal zone and cooling device
 thermal_path=/config/mellanox/thermal
-temp_port=$thermal_path/temp1_input_port
-temp_port_fault=$thermal_path/temp1_fault_port
+temp_port=$thermal_path/temp_input_port1
+temp_port_fault=$thermal_path/temp_fault_port1
 temp_fan_amb=$thermal_path/fan_amb
 temp_port_amb=$thermal_path/port_amb
 temp_asic=$thermal_path/temp1_input_asic
 pwm=$thermal_path/pwm1
 psu1_status=$thermal_path/psu1_status
 psu2_status=$thermal_path/psu2_status
-tz_mode=$thermal_path/thermal_zone_mode
-temp_trip_min=$thermal_path/temp_trip_min
-tz_temp=$thermal_path/thermal_zone_temp
+tz_mode=$thermal_path/mlxsw_thermal_zone_mode
+temp_trip_norm=$thermal_path/mlxsw_temp_trip_norm
+temp_trip_high=$thermal_path/mlxsw_temp_trip_high
+temp_trip_hot=$thermal_path/mlxsw_temp_trip_hot
+temp_trip_crit=$thermal_path/mlxsw_temp_trip_crit
+temp_trip_policy=$thermal_path/mlxsw_temp_trip_policy
+tz_temp=$thermal_path/mlxsw_thermal_zone_temp
 cooling_cur_state=$thermal_path/cooling_cur_state
 
 # Input parameters for the system thermal class, the number of tachometers, the
@@ -53,16 +57,19 @@ system_thermal_type_def=1
 polling_time_def=15
 max_tachos_def=12
 max_psus_def=2
+max_ports_def=64
 system_thermal_type=${1:-$system_thermal_type_def}
 max_tachos=${2:-$max_tachos_def}
 max_psus=${3:-$max_psus_def}
 polling_time=${4:-$polling_time_def}
+max_ports=${5:-$max_ports_def}
 
 # Local constants
 pwm_noact=0
 pwm_max=1
 pwm_max_rpm=255
 max_amb=120000
+untrusted_sensor=0
 
 # Thermal tables for the minimum FAN setting per system time. It contains
 # entries with ambient temperature threshold values and relevant minimum
@@ -222,7 +229,7 @@ validate_thermal_configuration()
 		fi
 	done
 	if [ ! -L $cooling_cur_state ] || [ ! -L $tz_mode  ] ||
-	   [ ! -L $temp_trip_min ] || [ ! -L $tz_temp ]; then
+	   [ ! -L $temp_trip_norm ] || [ ! -L $tz_temp ]; then
 		log_failure_msg "Thermal zone attributes are not exist"
 		exit 1
 	fi
@@ -244,6 +251,18 @@ validate_thermal_configuration()
 			exit 1
 		fi
 	fi
+}
+
+check_untrested_port_sensor()
+{
+	for ((i=1; i<=$max_ports_def; i+=1)); do
+		if [ -f $thermal_path/temp_fault_port"$i" ]; then
+			temp_fault=`cat $thermal_path/temp_fault_port"$i"`
+			if [ $temp_fault -eq 1 ]; then
+				untrusted_sensor=1
+			fi
+		fi
+	done
 }
 
 thermal_periodic_report()
@@ -396,10 +415,7 @@ set_pwm_min_threshold()
 	unk_dir=0
 
 	# Check for untrusted modules
-	temp1_fault=`cat $temp_port_fault`
-	if [ $temp1_fault -eq 1 ]; then
-		untrusted_sensor=1
-	fi
+	check_untrested_port_sensor
 
 	# Define FAN direction
 	temp_fan_ambient=`cat $temp_fan_amb`
@@ -529,10 +545,8 @@ set_pwm_min_speed()
 	untrusted_sensor=0
 
 	# Check for untrusted modules
-	temp1_fault=`cat $temp_port_fault`
-	if [ $temp1_fault -eq 1 ]; then
-		untrusted_sensor=1
-	fi
+	check_untrested_port_sensor
+
 	# Set FAN minimum speed according to  presence of untrusted cabels.
 	if [ $untrusted_sensor -eq 0 ]; then
 		fan_dynamic_min=$config_trust
@@ -583,7 +597,7 @@ thermal_control_exit()
 
 check_trip_min_vs_current_temp()
 {
-	trip_min=`cat $temp_trip_min`
+	trip_min=`cat $temp_trip_norm`
 	temp_now=`cat $tz_temp`
 	if [ $trip_min -gt  $temp_now ]; then
 		set_cur_state=$(($fan_dynamic_min-$fan_max_state))
