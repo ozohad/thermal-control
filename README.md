@@ -137,7 +137,7 @@ SYSFS attributes:
 - temp_port_amb:	port side ambient temperature value
 - temp_port:		port temperature value
 - temp_port_fault:	port temperature fault
-- temp_trip_min:	thermal zone minimum temperature trip
+- temp_trip_norm:	thermal zone minimum temperature trip
 - tz_mode:		thermal zone mode (enabled or disabled)
 - tz_temp:		thermal zone temperature
 
