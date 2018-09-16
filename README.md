@@ -11,11 +11,22 @@ Supported systems:
 - MSN201* Boxer                                           
 - QMB7*|SN37*|SN34* Jupiter, Jaguar, Anaconda
 
+Introduction:
+Mellanox thermal monitoring is an open source package for better thermal
+performance and fan efficiently in Mellanox Spectrum managed products.
+The monitoring measure temperature from the ports and ASIC core. It operates
+in kernel space and binds PWM control with Linux thermal zone for each
+measurement device (ports & core).
+The thermal algorithm uses step wise policy which set FANs according to the
+thermal trends (high temperature = faster fan; lower temperature = slower fan).
+
 Description:
-The thermal monitoring is performed in kernel space. The thermal zone binds PWM
-control and the temperature measure, which is accumulated temperature from the
-ports and from the ASIC. Kernel algorithm uses step wise policy. For details,
-please refer to kernel documentation file Documentation/thermal/sysfs-api.txt.
+The thermal zone binds PWM control and the temperature measure from the
+transceivers and from the ASIC (swictch ambient). Kernel algorithm uses step
+wise policy.It creates the set of thermal zones, where each relevant thermal
+sensor is bound to the same PWM control.
+For details, please refer to kernel documentation file:
+Documentation/thermal/sysfs-api.txt.
 Existing kernel thermal framework provides:
 Concepts of thermal zones, trip points, cooling devices, thermal instances,
 thermal governors:
