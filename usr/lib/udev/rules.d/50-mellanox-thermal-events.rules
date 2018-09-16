@@ -51,6 +51,7 @@ SUBSYSTEM=="hwmon", DEVPATH=="/devices/pci0000:00/0000:*/0000:*/hwmon/hwmon*", A
 # Cooling device.
 SUBSYSTEM=="thermal", KERNEL=="cooling_device*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add cooling_device %S %p %k"
 SUBSYSTEM=="thermal", KERNEL=="cooling_device*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm cooling_device %S %p %k"
+SUBSYSTEM=="thermal", KERNEL=="cooling_device*", ACTION=="change", RUN+="/usr/bin/mellanox-thermal-events.sh change cooling_device %S %p %k"
 
 # Thermal zone.
 SUBSYSTEM=="thermal", KERNEL=="thermal_zone*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add thermal_zone %S %p %k"

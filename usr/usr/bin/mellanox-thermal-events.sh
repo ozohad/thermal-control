@@ -22,6 +22,7 @@
 thermal_path=/config/mellanox/thermal
 max_psus=2
 max_tachos=12
+max_modules_ind=65
 fan_command=0x3b
 fan_psu_default=0x3c
 i2c_bus_max=10
@@ -65,16 +66,31 @@ if [ "$1" == "add" ]; then
 					ln -sf $3$4/fan"$i"_input $thermal_path/fan"$i"_input
 				fi
 			done
-			ln -sf $3$4/temp2_input $thermal_path/temp1_input_port
-			ln -sf $3$4/temp2_fault $thermal_path/temp1_fault_port
+			for ((i=2; i<=$max_modules_ind; i+=1)); do
+				if [ -f $3$4/temp"$i"_input ]; then
+					j=$(($i-1))
+					ln -sf $3$4/temp"$i"_input $thermal_path/temp_input_port"$j"
+					ln -sf $3$4/temp"$i"_fault $thermal_path/temp_fault_port"$j"
+					ln -sf $3$4/temp"$i"_crit $thermal_path/temp_crit_port"$j"
+					ln -sf $3$4/temp"$i"_emergency $thermal_path/temp_emergency_port"$j"
+				fi
+			done
 		fi
 	fi
 	if [ "$2" == "thermal_zone" ]; then
 		zonetype=`cat $3$4/type`
-		if [ "$zonetype" == "mlxsw" ]; then
-			ln -sf $3$4/mode $thermal_path/thermal_zone_mode
-			ln -sf $3$4/trip_point_0_temp $thermal_path/temp_trip_min
-			ln -sf $3$4/temp $thermal_path/thermal_zone_temp
+		zonep0type="${zonetype:0:${#zonetype}-1}"
+		zonep1type="${zonetype:0:${#zonetype}-2}"
+		zonep2type="${zonetype:0:${#zonetype}-3}"
+		if [ "$zonetype" == "mlxsw" ] || [ "$zonep0type" == "mlxsw-port" ] ||
+		   [ "$zonep1type" == "mlxsw-port" ] || [ "$zonep2type" == "mlxsw-port" ]; then
+			ln -sf $3$4/mode $thermal_path/"$zonetype"_thermal_zone_mode
+			ln -sf $3$4/policy $thermal_path/"$zonetype"_thermal_zone_policy
+			ln -sf $3$4/trip_point_0_temp $thermal_path/"$zonetype"_temp_trip_norm
+			ln -sf $3$4/trip_point_1_temp $thermal_path/"$zonetype"_temp_trip_high
+			ln -sf $3$4/trip_point_2_temp $thermal_path/"$zonetype"_temp_trip_hot
+			ln -sf $3$4/trip_point_3_temp $thermal_path/"$zonetype"_temp_trip_crit
+			ln -sf $3$4/temp $thermal_path/"$zonetype"_thermal_zone_temp
 		fi
 	fi
 	if [ "$2" == "cooling_device" ]; then
@@ -110,12 +126,23 @@ if [ "$1" == "add" ]; then
 elif [ "$1" == "change" ]; then
 	if [ "$2" == "thermal_zone" ]; then
 		zonetype=`cat $3$4/type`
-		if [ "$zonetype" == "mlxsw" ]; then
+		zonep0type="${zonetype:0:${#zonetype}-1}"
+		zonep1type="${zonetype:0:${#zonetype}-2}"
+		zonep2type="${zonetype:0:${#zonetype}-3}"
+		if [ "$zonetype" == "mlxsw" ] || [ "$zonep0type" == "mlxsw-port" ] ||
+		   [ "$zonep1type" == "mlxsw-port" ] || [ "$zonep2type" == "mlxsw-port" ]; then
 			# Notify thermal control about thermal zone change.
 			if [ -f /var/run/mellanox-thermal.pid ]; then
 				pid=`cat /var/run/mellanox-thermal.pid`
 				kill -USR1 $pid
 			fi
+		fi
+	fi
+	if [ "$2" == "cooling_device" ]; then
+		coolingtype=`cat $3$4/type`
+		if [ "$coolingtype" == "mlxsw_fan" ] ||
+		   [ "$coolingtype" == "mlxreg_fan" ]; then
+			echo $thermal_path/cooling_cur_state >> /etc/trace
 		fi
 	fi
 	if [ "$2" == "hotplug_asic" ]; then
@@ -158,16 +185,31 @@ else
 				fi
 			done
 			unlink $thermal_path/$pwm1
-			unlink $thermal_path/temp1_input_port
-			unlink $thermal_path/temp1_fault_port
+			for ((i=2; i<=$max_modules_ind; i+=1)); do
+				if [ -L $thermal_path/temp_input_port"$j" ]; then
+					j=$(($i-1))
+					unlink $thermal_path/temp_input_port"$j"
+					unlink $thermal_path/temp_fault_port"$j"
+					unlink $thermal_path/temp_crit_port"$j"
+					unlink $thermal_path/temp_emergency_port"$j"
+				fi
+			done
 		fi
 	fi
 	if [ "$2" == "thermal_zone" ]; then
 		zonetype=`cat $3$4/type`
-		if [ "$zonetype" == "mlxsw" ]; then
-			unlink $thermal_path/thermal_zone_mode
-			unlink $thermal_path/temp_trip_min
-			unlink $thermal_path/thermal_zone_temp
+		zonep0type="${zonetype:0:${#zonetype}-1}"
+		zonep1type="${zonetype:0:${#zonetype}-2}"
+		zonep2type="${zonetype:0:${#zonetype}-3}"
+		if [ "$zonetype" == "mlxsw" ] || [ "$zonep0type" == "mlxsw-port" ] ||
+		   [ "$zonep1type" == "mlxsw-port" ] || [ "$zonep2type" == "mlxsw-port" ]; then
+			unlink $thermal_path/"$zonetype"_thermal_zone_mode
+			unlink $thermal_path/"$zonetype"_thermal_policy
+			unlink $thermal_path/"$zonetype"_temp_trip_norm
+			unlink $thermal_path/"$zonetype"_temp_trip_high
+			unlink $thermal_path/"$zonetype"_temp_trip_hot
+			unlink $thermal_path/"$zonetype"_temp_trip_crit
+			unlink $thermal_path/"$zonetype"_thermal_zone_temp
 		fi
 	fi
 
