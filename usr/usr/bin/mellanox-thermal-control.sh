@@ -415,12 +415,21 @@ get_psu_presence()
 			if [ $present -eq 0 ]; then
 				pwm_required_act=$pwm_max
 				mode=`cat $tz_mode`
-				# Disable thermal zone if was enabled.
+				# Disable asic and ports thermal zones if were enabled.
 				if [ $mode == "enabled" ]; then
 					echo disabled > $tz_mode
-					echo $pwm_max_rpm > $pwm
-					log_action_msg "Thermal zone is disabled due to PS unit absence"
 				fi
+				for ((i=1; i<=$max_ports; i+=1)); do
+					if [ -f $thermal_path/mlxsw-port"$i"_thermal_zone_mode ]; then
+						mode=`cat $thermal_path/mlxsw-port"$i"_thermal_zone_mode`
+						if [ $mode == "enabled" ]; then
+							echo disabled > $$thermal_path/mlxsw-port"$i"_thermal_zone_mode
+						fi
+					fi
+				done
+				echo $pwm_max_rpm > $pwm
+				log_action_msg "Thermal zone is disabled due to PS unit absence"
+
 				return
 			fi
 		fi
@@ -437,12 +446,21 @@ get_fan_faults()
 			if [ $fault -eq 1 ]; then
 				pwm_required_act=$pwm_max
 				mode=`cat $tz_mode`
-				# Disable thermal zone if was enabled.
+				# Disable asic and ports thermal zones if were enabled.
 				if [ $mode == "enabled" ]; then
 					echo disabled > $tz_mode
-					echo $pwm_max_rpm > $pwm
-					log_action_msg "Thermal zone is disabled due to FAN fault"
 				fi
+				for ((i=1; i<=$max_ports; i+=1)); do
+					if [ -f $thermal_path/mlxsw-port"$i"_thermal_zone_mode ]; then
+						mode=`cat $thermal_path/mlxsw-port"$i"_thermal_zone_mode`
+						if [ $mode == "enabled" ]; then
+							echo disabled > $$thermal_path/mlxsw-port"$i"_thermal_zone_mode
+						fi
+					fi
+				done
+				echo $pwm_max_rpm > $pwm
+				log_action_msg "Thermal zone is disabled due to FAN fault"
+
 				return
 			fi
 		fi
@@ -745,12 +763,21 @@ do
 	mode=`cat $tz_mode`
 	if [ $mode == "disabled" ]; then
 		echo enabled > $tz_mode
-		log_action_msg "Thermal zone is re-enabled"
+		log_action_msg "ASIC thermal zone is re-enabled"
 		# System health (PS units or FANs) has been recovered. Set PWM
 		# speed to dynamic speed minimum value and give to kernel
 		# thermal algorithm can stabilize PWM speed if necessary.
 		check_trip_min_vs_current_temp 2
 	fi
+	for ((i=1; i<=$max_ports; i+=1)); do
+		if [ -f $thermal_path/mlxsw-port"$i"_thermal_zone_mode ]; then
+			mode=`cat $thermal_path/mlxsw-port"$i"_thermal_zone_mode`
+			if [ $mode == "disabled" ]; then
+				echo enabled > $$thermal_path/mlxsw-port"$i"_thermal_zone_mode
+				log_action_msg "Port $i thermal zone is re-enabled"
+			fi
+		fi
+	done
 	count=$(($count+1))
 	if [ $count -eq $periodic_report ]; then
 		count=0
