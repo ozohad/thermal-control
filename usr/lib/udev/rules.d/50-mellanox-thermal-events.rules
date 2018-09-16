@@ -60,6 +60,8 @@ SUBSYSTEM=="thermal", KERNEL=="thermal_zone*", ACTION=="change", RUN+="/usr/bin/
 # Hotplug devices statuses.
 SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/mlxplat/mlxreg-hotplug/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh add hotplug %S %p"
 SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/mlxplat/mlxreg-hotplug/hwmon/hwmon*", ACTION=="remove", RUN+="/usr/bin/mellanox-thermal-events.sh rm hotplug %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/mlxplat/mlxreg-hotplug/hwmon/hwmon*", ATTR{asic1}=="2" ACTION=="change", RUN+="/usr/bin/mellanox-thermal-events.sh change hotplug_asic up %S %p"
+SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/mlxplat/mlxreg-hotplug/hwmon/hwmon*", ATTR{asic1}=="0" ACTION=="change", RUN+="/usr/bin/mellanox-thermal-events.sh change hotplug_asic down %S %p"
 
 # PS units power cables when power source is connected
 SUBSYSTEM=="hwmon", DEVPATH=="/devices/platform/i2c_mlxcpld*/i2c-*/i2c-*/*-0059/hwmon/hwmon*", ACTION=="add", RUN+="/usr/bin/mellanox-thermal-events.sh rm add psu1 %p %k %S %n"

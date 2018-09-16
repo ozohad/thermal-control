@@ -16,12 +16,37 @@
 # doesn't depend on specific system topology. It allows thermal algorithm to
 # work in the same on different system over this system independent model.
 
+. /lib/lsb/init-functions
+
 # Local variables
 thermal_path=/config/mellanox/thermal
 max_psus=2
 max_tachos=12
 fan_command=0x3b
 fan_psu_default=0x3c
+i2c_bus_max=10
+i2c_bus_offset=0
+i2c_asic_bus_default=2
+
+find_i2c_bus()
+{
+	# Find physical bus number of Mellanox I2C controller. The default
+	# number is 1, but it could be assigned to others id numbers on
+	# systems with different CPU types.
+	for ((i=1; i<$i2c_bus_max; i++)); do
+		folder=/sys/bus/i2c/devices/i2c-$i
+		if [ -d $folder ]; then
+			name=`cat $folder/name | cut -d' ' -f 1`
+			if [ "$name" == "i2c-mlxcpld" ]; then
+				i2c_bus_offset=$(($i-1))
+				return
+			fi
+		fi
+	done
+
+	log_failure_msg "i2c-mlxcpld driver is not loaded"
+	exit 0
+}
 
 if [ "$1" == "add" ]; then
 	if [ "$2" == "fan_amb" ] || [ "$2" == "port_amb" ]; then
@@ -90,6 +115,28 @@ elif [ "$1" == "change" ]; then
 			if [ -f /var/run/mellanox-thermal.pid ]; then
 				pid=`cat /var/run/mellanox-thermal.pid`
 				kill -USR1 $pid
+			fi
+		fi
+	fi
+	if [ "$2" == "hotplug_asic" ]; then
+		if [ -d /sys/module/mlxsw_pci ]; then
+			return
+		fi
+		find_i2c_bus
+		bus=$(($i2c_asic_bus_default+$i2c_bus_offset))
+		path=/sys/bus/i2c/devices/i2c-$bus
+		if [ "$3" == "up" ]; then
+			if [ ! -d /sys/module/mlxsw_minimal ]; then
+				modprobe mlxsw_minimal
+			fi
+			if [ ! -d /sys/bus/i2c/devices/$bus-0048 ] &&
+			   [ ! -d /sys/bus/i2c/devices/$bus-00048 ]; then
+				echo mlxsw_minimal 0x48 > $path/new_device
+			fi
+		elif [ "$3" == "down" ]; then
+			if [ -d /sys/bus/i2c/devices/$bus-0048 ] ||
+			   [ -d /sys/bus/i2c/devices/$bus-00048 ]; then
+				echo 0x48 > $path/delete_device
 			fi
 		fi
 	fi
