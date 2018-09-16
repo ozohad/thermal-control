@@ -108,7 +108,7 @@ Package contains the following files, used within the workload:
 - recipes-kernel/linux/linux-4.19/series
 -	kernel patch series file
 
-SYSFS attributes:
+# SYSFS attributes:
 - The thermal control operates over sysfs attributes. These attributes are
   exposed as symbolic links to /config/mellanox/thermal folder. These folder
   contains the next files (which are symbolic links):
@@ -127,6 +127,7 @@ SYSFS attributes:
 - tz_mode:		thermal zone mode (enabled or disabled)
 - tz_temp:		thermal zone temperature
 
+# Kernel configuration
 Kernel configuration required the next setting (kernel version should be v4.19
 or later):
 - CONFIG_NET_VENDOR_MELLANOX
@@ -186,6 +187,7 @@ For returning back to PCI option:
 - And then run:
   update-initramfs -u (in case initramfs is used)
 
+# Packaging:
 The package depends on the next packages:
 - init-system-helpers:	helper tools for all init systems
 - lsb-base:		Linux Standard Base init script functionality
